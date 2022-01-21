@@ -363,8 +363,8 @@ native_local_optimizer_methods = {
 
 native_findroot_methods = {
     "Automatic": find_root_newton,
-    "newton": find_root_newton,
-    "secant": find_root_secant,
+    "Newton": find_root_newton,
+    "Secant": find_root_secant,
 }
 
 
