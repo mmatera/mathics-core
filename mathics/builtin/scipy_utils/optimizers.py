@@ -3,8 +3,8 @@
 
 from mathics.core.expression import Expression
 from mathics.core.atoms import Number, Real
-from mathics.core.symbols import SymbolList
-from mathics.core.systemsymbols import SymbolAutomatic, SymbolInfinity
+from mathics.core.symbols import SymbolList, Symbol
+from mathics.core.systemsymbols import SymbolAutomatic, SymbolInfinity, SymbolFailed
 from mathics.builtin.numeric import apply_N
 
 from scipy.optimize import (
@@ -78,6 +78,12 @@ def process_result_1d_opt(result, opts, evaluation):
     return (x0, fopt), result.success
 
 
+def process_result_1d_solver(result, opts, evaluation):
+    """Process the results"""
+    x0 = Real(result.root)
+    return x0, result.converged
+
+
 def find_minimum_brent(
     f: "Expression",
     x0: "Expression",
@@ -114,7 +120,7 @@ def find_minimum_golden(
     evaluation: "Evaluation",
 ) -> (Number, bool):
     """
-    This implements the Brent's optimizer
+    This implements the golden rule optimizer
     """
     comp_fun = compile_fn(f, x, opts, evaluation)
     boundary = opts.get("_x0", None)
@@ -135,7 +141,74 @@ def find_minimum_golden(
     return process_result_1d_opt(result, opts, evaluation)
 
 
+def find_root1d_brenth(
+    f: "Expression",
+    x0: "Expression",
+    x: "Expression",
+    opts: dict,
+    evaluation: "Evaluation",
+) -> (Number, bool):
+    """
+    This implements the Brent's solver
+    """
+    comp_fun = compile_fn(f, x, opts, evaluation)
+    boundary = opts.get("_x0", None)
+    if boundary and len(boundary) == 2:
+        a, b = sorted(u.to_python() for u in boundary)
+    else:
+        x0 = apply_N(x0, evaluation)
+        b = abs(x0.to_python())
+        b = 1 if b == 0 else b
+        a = -b
+
+    if not isinstance(comp_fun(a), Number):
+        evaluation.message("FindRoot", "nnum", x, x0)
+        return SymbolFailed, False
+
+    tol, maxit = get_tolerance_and_maxit(opts, b - a, evaluation)
+
+    try:
+        result = root_scalar(
+            comp_fun,
+            bracket=(a, b),
+            method="brenth",
+            xtol=tol,
+            options={"maxiter": maxit},
+        )
+    except ValueError:
+        evaluation.message("FindRoot", "brnts", a, b)
+        return SymbolFailed, False
+    except TypeError:
+        evaluation.message("FindRoot", "nnum", x, x0)
+        return SymbolFailed, False
+
+    return process_result_1d_solver(result, opts, evaluation)
+
+
+def update_findroot_messages(messages):
+    messages.update(
+        {
+            "brnts": "Brent method requires that the target has different signs at `1` and `2`",
+        }
+    )
+
+
+def update_findminimum_messages(messages):
+    messages.update(
+        {
+            "brentb": "Brent method requires two boundaries but `1` where given",
+        }
+    )
+
+
 scipy_optimizer_methods = {
     "brent": find_minimum_brent,
     "golden": find_minimum_brent,
+}
+
+
+scipy_findroot_methods = {
+    #    "Automatic": find_root1d_brenth,
+    "brenth": find_root1d_brenth,
+    #    "newton": find_root1d_newton,
 }

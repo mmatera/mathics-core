@@ -1404,12 +1404,23 @@ class FindRoot(_BaseFinder):
     }
 
     methods = {}
-    if True:
+    try:
         from mathics.algorithm.optimizers import native_findroot_methods
 
         methods.update(native_findroot_methods)
-    # except:
-    #    pass
+    except Exception:
+        pass
+    if True:
+        from mathics.builtin.scipy_utils.optimizers import (
+            scipy_findroot_methods,
+            update_findroot_messages,
+        )
+
+        methods.update(scipy_findroot_methods)
+        messages = _BaseFinder.messages.copy()
+        update_findroot_messages(messages)
+    # except Exception:
+    #   pass
 
 
 class FindMinimum(_BaseFinder):
