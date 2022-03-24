@@ -29,6 +29,8 @@ from mathics.builtin.box.graphics3d import (
     Tube3DBox,
 )
 
+from mathics.builtin.box.uniform_polyhedra import UniformPolyhedron3DBox
+
 from mathics.builtin.graphics import (
     DEFAULT_POINT_FACTOR,
     GraphicsElements,
@@ -154,7 +156,7 @@ def arrow_box(self, **options) -> str:
     def polygon(points):
         yield "filldraw("
         yield "--".join(["(%.5g,%5g)" % xy for xy in points])
-        yield "--cycle, % s);" % arrow_pen
+        yield "--cycle, %s);" % arrow_pen
 
     extent = self.graphics.view_width or 0
     default_arrow = self._default_arrow(polygon)
@@ -613,6 +615,25 @@ def sphere3dbox(self, **options) -> str:
 
 
 add_conversion_fn(Sphere3DBox)
+
+
+def uniform_polyhedron_3d_box(self) -> list:
+    # width = self.style.get_line_width(face_element=self.face_element)
+    pen = asy_create_pens(
+        edge_color=self.edge_color,
+        face_color=self.face_color,
+        # stroke_width=width,
+        # is_face_element=self.face_element,
+    )
+    asy = """// UniformPolyhedron3DBox
+import polyhedron_js;
+"""
+    asy += f"draw({self.sub_type});\n"
+    print("### uniformPolyhedron_3d_box", asy)
+    return asy
+
+
+add_conversion_fn(UniformPolyhedron3DBox, uniform_polyhedron_3d_box)
 
 
 def tube3dbox(self, **options) -> str:
