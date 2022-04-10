@@ -32,6 +32,7 @@ from mathics.builtin.colors.color_directives import (
     LUVColor,
     RGBColor,
     XYZColor,
+    Opacity,
 )
 
 from mathics.builtin.options import options_to_rules
@@ -52,6 +53,7 @@ from mathics.core.systemsymbols import (
     SymbolMakeBoxes,
 )
 
+
 from mathics.core.formatter import lookup_method
 from mathics.format.asy_fns import asy_bezier
 
@@ -60,6 +62,7 @@ from mathics.core.attributes import protected, read_protected
 
 SymbolEdgeForm = Symbol("System`EdgeForm")
 SymbolFaceForm = Symbol("System`FaceForm")
+SymbolDirective = Symbol("System`Directive")
 
 GRAPHICS_OPTIONS = {
     "AspectRatio": "Automatic",
@@ -102,7 +105,7 @@ class Coords(object):
                 if len(expr.leaves) > 1:
                     self.p = coords(expr.leaves[1])
                 else:
-                    self.p = None
+                    self.p = (0, 0)
             else:
                 self.p = coords(expr)
 
@@ -204,6 +207,7 @@ class Show(Builtin):
     """
 
     options = GRAPHICS_OPTIONS
+    summary_text = "show a graphics object"
 
     def apply(self, graphics, evaluation, options):
         """Show[graphics_, OptionsPattern[%(name)s]]"""
@@ -276,6 +280,7 @@ class Graphics(Builtin):
     options = GRAPHICS_OPTIONS
 
     box_suffix = "Box"
+    summary_text = "a 2D graphics object"
 
     def apply_makeboxes(self, content, evaluation, options):
         """MakeBoxes[%(name)s[content_, OptionsPattern[%(name)s]],
@@ -398,6 +403,7 @@ class Thin(Builtin):
     """
 
     rules = {"Thin": "AbsoluteThickness[0.5]"}
+    summary_text = "graphics directive setting a thin line width"
 
 
 class Thick(Builtin):
@@ -409,6 +415,7 @@ class Thick(Builtin):
     """
 
     rules = {"Thick": "AbsoluteThickness[2]"}
+    summary_text = "graphics directive setting a thick line width"
 
 
 class PointSize(_Size):
@@ -442,11 +449,29 @@ class FontColor(Builtin):
     </dl>
     """
 
-    pass
+    summary_text = "set the current color of the text"
 
 
 class Offset(Builtin):
-    pass
+    """
+    <dl>
+       <dt>'Offset'[{$dx$, $dy$}, $position$]
+       <dd>gives the position of a graphical object obtained by starting
+           at the specified $position$ and then moving by absolute
+            offset {$dx$, $dy$}.
+    </dl>
+    In the example, the green disk is at the position ${0.5,0.5}$ regarding the
+    logical coordinate system, while the black one is displaced $100$ points
+    to the right and $100$ points to up regarding the absolute coordinate system.
+    >> Graphics[{Blue, Disk[{0, 0}, 0.1], Green, Disk[{0.5, 0.5}, 0.1], Black, Disk[Offset[{100, 100}], 0.1]}]
+     = -Graphics-
+    In this other picture, all the elements with relative sizes are scaled by 10,
+    while the absolute position is kept as before:
+    >> Graphics[{Blue, Disk[{0, 0}, 1], Green, Disk[{5, 5}, 1], Black, Disk[Offset[{100, 100}], 1]}]
+     = -Graphics-
+    """
+
+    summary_text = "an absolute displacement from a given point"
 
 
 class Rectangle(Builtin):
@@ -466,6 +491,7 @@ class Rectangle(Builtin):
     """
 
     rules = {"Rectangle[]": "Rectangle[{0, 0}]"}
+    summary_text = "draw a rectangle"
 
 
 class Disk(Builtin):
@@ -497,6 +523,7 @@ class Disk(Builtin):
     """
 
     rules = {"Disk[]": "Disk[{0, 0}]"}
+    summary_text = "draw a disk (filled circle)"
 
 
 class Circle(Builtin):
@@ -526,6 +553,7 @@ class Circle(Builtin):
     """
 
     rules = {"Circle[]": "Circle[{0, 0}]"}
+    summary_text = "draw a circle (non filled circle)"
 
 
 class Inset(Builtin):
@@ -545,6 +573,8 @@ class Text(Inset):
     #> Graphics[{Text[x, {0,0}]}]
      = -Graphics-
     """
+
+    summary_text = "draw a text"
 
 
 class _Polyline(_GraphicsElementBox):
@@ -609,7 +639,7 @@ class Point(Builtin):
 
     """
 
-    pass
+    summary_text = "draw a point"
 
 
 # FIXME: We model points as line segments which
@@ -630,7 +660,7 @@ class Line(Builtin):
     = -Graphics3D-
     """
 
-    pass
+    summary_text = "draw a line joining a sequence of points"
 
 
 def _svg_bezier(*segments):
@@ -679,7 +709,7 @@ class FilledCurve(Builtin):
     = -Graphics-
     """
 
-    pass
+    summary_text = "draw a filled area with curve segment boundary in 2D"
 
 
 class Polygon(Builtin):
@@ -706,7 +736,7 @@ class Polygon(Builtin):
     = -Graphics3D-
     """
 
-    pass
+    summary_text = "draw a polygon in 2D or 3D"
 
 
 class RegularPolygon(Builtin):
@@ -728,6 +758,8 @@ class RegularPolygon(Builtin):
     >> Graphics[{Yellow, Rectangle[], Orange, RegularPolygon[{1, 1}, {0.25, 0}, 3]}]
     = -Graphics-
     """
+
+    summary_text = "draw a regular polygon in 2D"
 
 
 class Arrow(Builtin):
@@ -763,7 +795,7 @@ class Arrow(Builtin):
      = {-Graphics-, -Graphics-, -Graphics-, -Graphics-, -Graphics-}
     """
 
-    pass
+    summary_text = "draw an arrow from one point to another in 2D or 3D"
 
 
 class Arrowheads(_GraphicsDirective):
@@ -1018,6 +1050,10 @@ def total_extent(extents):
 
 class EdgeForm(Builtin):
     """
+    <dl>
+    <dt>'EdgeForm[{directive_1, directive_2, ...}]'
+    <dd>is a graphics directive which specifies that edges of polygons and other filled graphics objects are to be drawn using the graphics directive or list of directives g.
+    </dl>
     >> Graphics[{EdgeForm[{Thick, Green}], Disk[]}]
      = -Graphics-
 
@@ -1025,11 +1061,20 @@ class EdgeForm(Builtin):
      = -Graphics-
     """
 
-    pass
+    summary_text = "graphics directive setting the style for edges"
 
 
 class FaceForm(Builtin):
-    pass
+    """
+    <dl>
+    <dt>'FaceForm[{directive_1, directive_2, ...}]'
+    <dd>is a graphics directive which specifies that faces of polygons and other filled graphics objects are to be drawn using the graphics directive or list of directives g.
+    </dl>
+    >> Graphics[{FaceForm[{Blue}], Disk[]}]
+     = -Graphics-
+    """
+
+    summary_text = "graphics directive setting the style for faces and polygons"
 
 
 def _style(graphics, item):
@@ -1087,6 +1132,9 @@ class Style(object):
     def get_style(
         self, style_class, face_element=None, default_to_faces=True, consider_forms=True
     ):
+        """
+        returns the styles for edge and faces corresponding to a given style_class.
+        """
         if face_element is not None:
             default_to_faces = consider_forms = face_element
         edge_style = face_style = None
@@ -1114,7 +1162,6 @@ class Style(object):
                         _, face_style = item.get_style(
                             style_class, default_to_faces=True, consider_forms=False
                         )
-
         return edge_style, face_style
 
     def get_option(self, name):
@@ -1181,7 +1228,16 @@ class _GraphicsElements(object):
             return new_style
 
         def convert(content, style):
-            if content.has_form("List", None):
+            if content.has_form("Directive", None):
+                directives = content.elements
+                if len(directives) == 0:
+                    return
+                if content.elements[0].get_head() is SymbolList:
+                    content = content.elements[0]
+                else:
+                    content = Expression(SymbolList, *content.elements)
+
+            if content.has_form(("List"), None):
                 items = content.leaves
             else:
                 items = [content]
@@ -1209,10 +1265,11 @@ class _GraphicsElements(object):
                     else:
                         element = element_class(self, style, item)
                     yield element
-                elif head is SymbolList:
+                elif head in (SymbolList, SymbolDirective):
                     for element in convert(item, style):
                         yield element
                 else:
+                    print("head=", head)
                     raise BoxConstructError
 
         self.elements = list(convert(content, self.style_class(self)))
@@ -1302,17 +1359,30 @@ class GraphicsElements(_GraphicsElements):
         self.pixel_width, self.pixel_height = pixel_width, pixel_height
 
 
-class Directive(Builtin):
+class Directive(_GraphicsDirective):
+    """
+    <dl>
+    <dt>'Directive[$directive_1$, $directive_2$, ...]'
+    <dt>'Directive[{$directive_1$, $directive_2$, ...}]'
+    <dd>represents a single graphic directive composed by directives $directive_1$, $directive_2$, ....
+    </dl>
+    >> Graphics[{Directive[Red, Thick], Circle[],Directive[Blue, Opacity[.1]], Rectangle[{0,0},{1,1}]}]
+     = -Graphics-
+    """
+
     attributes = read_protected | protected
+    summary_text = "a set of graphics directives"
 
 
 class Tiny(Builtin):
     """
     <dl>
     <dt>'ImageSize' -> 'Tiny'
-        <dd>produces a tiny image.
+        <dd>is a style or option setting that specifies that objects should be tiny.
     </dl>
     """
+
+    summary_text = "option specification for tiny size objects"
 
 
 class Small(Builtin):
@@ -1323,6 +1393,8 @@ class Small(Builtin):
     </dl>
     """
 
+    summary_text = "option specification for small size objects"
+
 
 class Medium(Builtin):
     """
@@ -1332,6 +1404,8 @@ class Medium(Builtin):
     </dl>
     """
 
+    summary_text = "option specification for medium size objects"
+
 
 class Large(Builtin):
     """
@@ -1340,6 +1414,8 @@ class Large(Builtin):
         <dd>produces a large image.
     </dl>
     """
+
+    summary_text = "option specification for large size objects"
 
 
 element_heads = frozenset(
@@ -1377,6 +1453,7 @@ styles = system_symbols_dict(
         "Hue": Hue,
         "GrayLevel": GrayLevel,
         "Thickness": Thickness,
+        "Opacity": Opacity,
         "AbsoluteThickness": AbsoluteThickness,
         "Thick": Thick,
         "Thin": Thin,

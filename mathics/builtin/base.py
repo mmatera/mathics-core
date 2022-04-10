@@ -78,13 +78,32 @@ def split_name(name: str) -> str:
     result = name[0]
     for i in range(1, len(name)):
         if name[i].isupper():
-            if not name[i - 1].isdigit():
+            if not (
+                name[i - 1].isdigit() or len(name) > i + 1 and name[i + 1].isupper()
+            ):
                 result = result + " "
         elif name[i].isdigit():
             if not name[i - 1].isdigit():
                 result = result + " "
         result = result + name[i]
     return result.lower()
+
+
+def expand_builtin_name_for_description(short_name: str) -> str:
+    # discard `Box`
+    if len(short_name) > 3 and short_name[-3:] == "Box":
+        short_name = short_name[:-3]
+    else:
+        short_name = short_name
+    # if is a 3DBox, move the 3D at the beginning
+    if short_name[-2:] == "3D":
+        short_name = "3D" + short_name[:-2]
+    # split the name and put in lower case
+    short_name = split_name(short_name).lower()
+    # choose the undeterminated article according to the first
+    # letter
+    article = "an" if short_name[0] in ("a", "e", "i", "o", "u") else "a"
+    return f"{article} {short_name}"
 
 
 mathics_to_python = {}
@@ -730,24 +749,20 @@ class BoxConstruct(InstanceableBuiltin):
 
     def __new__(cls, *elements, **kwargs):
         instance = super().__new__(cls, *elements, **kwargs)
-        article = (
-            "an "
-            if instance.get_name()[0].lower() in ("a", "e", "i", "o", "u")
-            else "a "
-        )
+        # In case it is not set, build a default summary_text and
+        # a docstring from the name of the class
 
-        instance.summary_text = (
-            "box representation for "
-            + article
-            + split_name(cls.get_name(short=True)[:-3])
-        )
+        builtin_name = instance.get_name(short=True)
+        short_name = expand_builtin_name_for_description(builtin_name)
+        if not hasattr(instance, "summary_text"):
+            instance.summary_text = f"box representation for {short_name}"
         if not instance.__doc__:
-            instance.__doc__ = rf"""
-            <dl>
-            <dt>'{instance.get_name()}'
-            <dd> box structure.
-            </dl>
-            """
+            instance.__doc__ = f"""
+                <dl>
+                <dt>'{builtin_name}[...]'
+                <dd>is box structure representing a {short_name}.
+                </dl>
+                """
 
         # the __new__ method from InstanceableBuiltin
         # calls self.init. It is expected that it set

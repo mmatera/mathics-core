@@ -124,6 +124,16 @@ def _euclidean_distance(a, b):
     return sqrt(sum((x1 - x2) * (x1 - x2) for x1, x2 in zip(a, b)))
 
 
+class Opacity(_GraphicsDirective):
+    def init(self, item=None, opacity=1.0):
+        super(_GraphicsDirective, self).init(None, item)
+        print("init opacity")
+        self.opacity_value = opacity
+
+    def get_opacity(self):
+        return self.opacity_value
+
+
 class _ColorObject(_GraphicsDirective, ImmutableValueMixin):
     formats = {
         # we are adding ImageSizeMultipliers in the rule below, because we do _not_ want color boxes to
