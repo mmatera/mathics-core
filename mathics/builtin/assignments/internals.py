@@ -693,16 +693,11 @@ class _SetOperator(object):
         else:
             name = lhs.get_head_name()
         lhs._format_cache = None
-        try:
-            # Deal with direct assignation to properties of
-            # the definition object
-            func = self.special_cases.get(name, None)
-            if func:
-                return func(self, lhs, rhs, evaluation, tags, upset)
+        func = self.special_cases.get(name, None)
+        if func:
+            return func(self, lhs, rhs, evaluation, tags, upset)
 
-            return assign_store_rules_by_tag(self, lhs, rhs, evaluation, tags, upset)
-        except AssignmentException:
-            return False
+        return assign_store_rules_by_tag(self, lhs, rhs, evaluation, tags, upset)
 
     def assign(self, lhs, rhs, evaluation):
         lhs._format_cache = None

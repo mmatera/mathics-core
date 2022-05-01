@@ -236,5 +236,5 @@ def test_set_and_clear_messages(str_expr, str_expected, message, out_msgs):
 
 def test_predecrement():
     check_evaluation(
-        "--5", "4", failure_message="Set::setraw: Cannot assign to raw object 5."
+        "--5", "5", failure_message="Set::setraw: Cannot assign to raw object 5."
     )

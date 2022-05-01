@@ -4,6 +4,7 @@ Forms of Assignment
 """
 
 
+from mathics.builtin.assignments.internals import AssignmentException
 from mathics.builtin.base import Builtin, BinaryOperator
 from mathics.core.symbols import Symbol
 
@@ -105,7 +106,10 @@ class Set(BinaryOperator, _SetOperator):
     def apply(self, lhs, rhs, evaluation):
         "lhs_ = rhs_"
 
-        self.assign(lhs, rhs, evaluation)
+        try:
+            self.assign(lhs, rhs, evaluation)
+        except AssignmentException:
+            return lhs
         return rhs
 
 
@@ -207,7 +211,10 @@ class TagSet(Builtin, _SetOperator):
             return
 
         rhs = rhs.evaluate(evaluation)
-        self.assign_elementary(lhs, rhs, evaluation, tags=[name])
+        try:
+            self.assign_elementary(lhs, rhs, evaluation, tags=[name])
+        except AssignmentException:
+            return lhs
         return rhs
 
 
