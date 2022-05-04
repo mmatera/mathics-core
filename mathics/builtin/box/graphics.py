@@ -1129,7 +1129,9 @@ class PointBox(_Polyline):
         self.edge_color, self.face_color = style.get_style(
             _ColorObject, face_element=True
         )
-
+        self.edge_opacity, self.face_opacity = style.get_style(
+            Opacity, face_element=True
+        )
         # Handle PointSize in a hacky way for now.
         point_size, _ = style.get_style(PointSize, face_element=False)
         if point_size is None:

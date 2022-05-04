@@ -24,6 +24,7 @@ from mathics.builtin.drawing.graphics_internals import (
 )
 from mathics.builtin.colors.color_directives import (
     _ColorObject,
+    Opacity,
     CMYKColor,
     GrayLevel,
     Hue,
@@ -1459,6 +1460,7 @@ styles = system_symbols_dict(
         "Thin": Thin,
         "PointSize": PointSize,
         "Arrowheads": Arrowheads,
+        "Opacity": Opacity,
     }
 )
 
