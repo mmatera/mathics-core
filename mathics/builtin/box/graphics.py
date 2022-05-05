@@ -1058,8 +1058,12 @@ class InsetBox(_GraphicsElementBox):
 
         if opacity is None:
             opacity, _ = style.get_style(Opacity, face_element=False)
+        else:
+            opacity = Opacity(opacity)
+
         if opacity is None:
             opacity = Opacity(1.0)
+
         self.opacity = opacity
 
         if item is not None:

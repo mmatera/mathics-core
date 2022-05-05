@@ -1270,7 +1270,7 @@ class _GraphicsElements(object):
                     for element in convert(item, style):
                         yield element
                 else:
-                    print("head=", head)
+                    print(item, " of type ", type(item), " is not a box.")
                     raise BoxConstructError
 
         self.elements = list(convert(content, self.style_class(self)))
