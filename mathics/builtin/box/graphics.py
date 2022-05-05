@@ -1049,15 +1049,19 @@ class InsetBox(_GraphicsElementBox):
         content=None,
         pos=None,
         opos=(0, 0),
-        opacity=1.0,
+        opacity=None,
     ):
         super(InsetBox, self).init(graphics, item, style)
         self.color = self.style.get_option("System`FontColor")
         if self.color is None:
             self.color, _ = style.get_style(_ColorObject, face_element=False)
-        # TODO: Check if this is correct:
-        self.opacity, _ = style.get_style(Opacity, face_element=False)
-        #        self.opacity = opacity * self.opacity
+
+        if opacity is None:
+            opacity, _ = style.get_style(Opacity, face_element=False)
+        if opacity is None:
+            opacity = Opacity(1.0)
+        self.opacity = opacity
+
         if item is not None:
             # if len(item.elements) not in (1, 2, 3):
             #    raise BoxConstructError

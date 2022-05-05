@@ -19,6 +19,7 @@ from mathics.core.expression import Expression
 from mathics.core.atoms import (
     Integer,
     Real,
+    MachineReal,
     String,
     from_python,
 )
@@ -137,7 +138,9 @@ class Opacity(_GraphicsDirective):
 
     # TODO: Implement me at the level of the formatters for 3D and asy.
     def init(self, item=None, *args, **kwargs):
-        super(Opacity, self).init(None, item)
+        if isinstance(item, (int, float)):
+            item = Expression("Opacity", MachineReal(item))
+            super(Opacity, self).init(None, item)
         self.opacity = item.leaves[0].to_python()
 
     def to_css(self):
