@@ -1614,14 +1614,14 @@ class OptionsPattern(PatternObject):
             defaults.get_option_values(
                 evaluation, allow_symbols=True, stop_on_error=False
             )
-            if isinstance(defaults, EvalMixin)
+            if isinstance(defaults, Evaluable)
             else {}
         )
         sequence = expression.get_sequence()
         for options in sequence:
             option_values = (
                 options.get_option_values(evaluation)
-                if isinstance(options, EvalMixin)
+                if isinstance(options, Evaluable)
                 else None
             )
             if option_values is None:
