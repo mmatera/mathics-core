@@ -258,11 +258,7 @@ class BaseElement(KeyComparable):
                         return result.evaluate(evaluation)
                 return None
 
-<<<<<<< HEAD
-            formatted = format_expr(expr) if isinstance(expr, EvalMixin) else None
-=======
             formatted = format_expr(expr) if isinstance(expr, Evaluable) else None
->>>>>>> 7462ece4 (simplify get_option_values)
             if formatted is not None:
                 result = formatted.do_format(evaluation, form)
                 if include_form:
@@ -468,6 +464,11 @@ class BaseElement(KeyComparable):
         with Head.name in `heads` and a number of elements according to the specification in
         element_counts.
         """
+        return False
+
+    # Warning: this is going away
+    def is_true(self) -> bool:
+        """Better use self is SymbolTrue"""
         return False
 
     @property
