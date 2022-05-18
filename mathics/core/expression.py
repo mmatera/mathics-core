@@ -34,6 +34,7 @@ from mathics.core.symbols import (
     Atom,
     BaseElement,
     EvalMixin,
+    Evaluable,
     Monomial,
     NumericOperators,
     Symbol,
@@ -171,7 +172,7 @@ class ExpressionCache:
         )
 
 
-class Expression(BaseElement, NumericOperators, EvalMixin):
+class Expression(BaseElement, NumericOperators, Evaluable):
     """
     A Mathics M-Expression.
 
@@ -690,7 +691,7 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
 
     def evaluate_elements(self, evaluation) -> "Expression":
         elements = [
-            element.evaluate(evaluation) if isinstance(element, EvalMixin) else element
+            element.evaluate(evaluation) if isinstance(element, Evaluable) else element
             for element in self._elements
         ]
         head = self._head.evaluate_elements(evaluation)
@@ -840,14 +841,17 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         """
         return list(self._elements)
 
-    def get_option_values(
-        self, evaluation, allow_symbols=False, stop_on_error=True
-    ) -> dict:
+    def get_option_values(self, evaluation, allow_symbols=False, stop_on_error=True):
         """
         Build a dictionary of options from an expression.
         For example Symbol("Integrate").get_option_values(evaluation, allow_symbols=True)
         will return a list of options associated to the definition of the symbol "Integrate".
+        If self is not an expression,
         """
+        # comment @mmatera: The implementation of this is awfull.
+        # This general method (in BaseElement) should be simpler (Numbers does not have Options).
+        # The implementation should be move to Symbol and Expression classes.
+
         options = self
         if options.has_form("List", None):
             options = options.flatten_with_respect_to_head(SymbolList)
@@ -1334,7 +1338,7 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         # first look for upvalue rules associated to a.
         # If it finds it, try to apply the corresponding rule.
         #    If it success, (the result is not None)
-        #      returns  result, reevaluate. reevaluate is True if the result is a different expression, and is EvalMixin.
+        #      returns  result, reevaluate. reevaluate is True if the result is a different expression, and is Evaluable.
         #    If the rule fails, continues with the next element.
         #
         # The next element is a number, so do not have upvalues. Then tries with upvalues from b.
@@ -1356,7 +1360,7 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
             rules_names = set()
             if not HOLD_ALL_COMPLETE & attributes:
                 for element in elements:
-                    if not isinstance(element, EvalMixin):
+                    if not isinstance(element, Evaluable):
                         continue
                     name = element.get_lookup_name()
                     if len(name) > 0:  # only lookup rules if this is a symbol
@@ -1378,7 +1382,7 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         for rule in rules():
             result = rule.apply(new, evaluation, fully=False)
             if result is not None:
-                if not isinstance(result, EvalMixin):
+                if not isinstance(result, Evaluable):
                     return result, False
                 if result.sameQ(new):
                     new._timestamp_cache(evaluation)
@@ -1840,7 +1844,7 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
                     n_expr = Expression(SymbolN, element, Integer(dps(_prec)))
                     n_result = (
                         n_expr.evaluate(evaluation)
-                        if isinstance(n_expr, EvalMixin)
+                        if isinstance(n_expr, Evaluable)
                         else n_expr
                     )
                     if isinstance(n_result, Number):
@@ -1850,7 +1854,7 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
                     # a regular evaluation
                     n_result = (
                         element.evaluate(evaluation)
-                        if isinstance(element, EvalMixin)
+                        if isinstance(element, Evaluable)
                         else element
                     )
                     if isinstance(n_result, Number):
@@ -1890,7 +1894,7 @@ def get_default_value(name, evaluation, k=None, n=None):
             name, "System`DefaultValues", defaultexpr, evaluation
         )
         if result is not None:
-            if result.sameQ(defaultexpr) and isinstance(result, EvalMixin):
+            if result.sameQ(defaultexpr) and isinstance(result, Evaluable):
                 result = result.evaluate(evaluation)
             return result
     return None
