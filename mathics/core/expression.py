@@ -34,7 +34,10 @@ from mathics.core.symbols import (
     Atom,
     BaseElement,
     EvalMixin,
+<<<<<<< HEAD
     Evaluable,
+=======
+>>>>>>> 518884a9 (Evaluable->EvalMixin)
     Monomial,
     NumericOperators,
     Symbol,
@@ -172,7 +175,7 @@ class ExpressionCache:
         )
 
 
-class Expression(BaseElement, NumericOperators, Evaluable):
+class Expression(BaseElement, NumericOperators, EvalMixin):
     """
     A Mathics M-Expression.
 
@@ -691,7 +694,7 @@ class Expression(BaseElement, NumericOperators, Evaluable):
 
     def evaluate_elements(self, evaluation) -> "Expression":
         elements = [
-            element.evaluate(evaluation) if isinstance(element, Evaluable) else element
+            element.evaluate(evaluation) if isinstance(element, EvalMixin) else element
             for element in self._elements
         ]
         head = self._head.evaluate_elements(evaluation)
@@ -1335,7 +1338,7 @@ class Expression(BaseElement, NumericOperators, Evaluable):
         # first look for upvalue rules associated to a.
         # If it finds it, try to apply the corresponding rule.
         #    If it success, (the result is not None)
-        #      returns  result, reevaluate. reevaluate is True if the result is a different expression, and is Evaluable.
+        #      returns  result, reevaluate. reevaluate is True if the result is a different expression, and is EvalMixin.
         #    If the rule fails, continues with the next element.
         #
         # The next element is a number, so do not have upvalues. Then tries with upvalues from b.
@@ -1357,7 +1360,7 @@ class Expression(BaseElement, NumericOperators, Evaluable):
             rules_names = set()
             if not HOLD_ALL_COMPLETE & attributes:
                 for element in elements:
-                    if not isinstance(element, Evaluable):
+                    if not isinstance(element, EvalMixin):
                         continue
                     name = element.get_lookup_name()
                     if len(name) > 0:  # only lookup rules if this is a symbol
@@ -1379,7 +1382,7 @@ class Expression(BaseElement, NumericOperators, Evaluable):
         for rule in rules():
             result = rule.apply(new, evaluation, fully=False)
             if result is not None:
-                if not isinstance(result, Evaluable):
+                if not isinstance(result, EvalMixin):
                     return result, False
                 if result.sameQ(new):
                     new._timestamp_cache(evaluation)
@@ -1841,7 +1844,7 @@ class Expression(BaseElement, NumericOperators, Evaluable):
                     n_expr = Expression(SymbolN, element, Integer(dps(_prec)))
                     n_result = (
                         n_expr.evaluate(evaluation)
-                        if isinstance(n_expr, Evaluable)
+                        if isinstance(n_expr, EvalMixin)
                         else n_expr
                     )
                     if isinstance(n_result, Number):
@@ -1851,7 +1854,7 @@ class Expression(BaseElement, NumericOperators, Evaluable):
                     # a regular evaluation
                     n_result = (
                         element.evaluate(evaluation)
-                        if isinstance(element, Evaluable)
+                        if isinstance(element, EvalMixin)
                         else element
                     )
                     if isinstance(n_result, Number):
@@ -1891,7 +1894,7 @@ def get_default_value(name, evaluation, k=None, n=None):
             name, "System`DefaultValues", defaultexpr, evaluation
         )
         if result is not None:
-            if result.sameQ(defaultexpr) and isinstance(result, Evaluable):
+            if result.sameQ(defaultexpr) and isinstance(result, EvalMixin):
                 result = result.evaluate(evaluation)
             return result
     return None

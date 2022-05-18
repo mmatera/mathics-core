@@ -258,7 +258,7 @@ class BaseElement(KeyComparable):
                         return result.evaluate(evaluation)
                 return None
 
-            formatted = format_expr(expr) if isinstance(expr, Evaluable) else None
+            formatted = format_expr(expr) if isinstance(expr, EvalMixin) else None
             if formatted is not None:
                 result = formatted.do_format(evaluation, form)
                 if include_form:
@@ -514,7 +514,7 @@ class BaseElement(KeyComparable):
         raise NotImplementedError
 
 
-class Evaluable:
+class EvalMixin:
     """
     Class associated to evaluable elements
     """

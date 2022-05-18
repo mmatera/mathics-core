@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from mathics.core.element import (
     BaseElement,
-    Evaluable,
+    EvalMixin,
     ensure_context,
     fully_qualified_symbol_name,
 )
