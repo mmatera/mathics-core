@@ -9,6 +9,7 @@ import typing
 from typing import Any, Callable, Iterable, Optional, Tuple, Union
 from itertools import chain
 from bisect import bisect_left
+from recordclass import RecordClass
 
 from mathics.core.atoms import from_python, Number, Integer
 
@@ -90,6 +91,25 @@ class BoxError(Exception):
         super().__init__("Box %s cannot be formatted as %s" % (box, form))
         self.box = box
         self.form = form
+
+
+class ElementsProperties(RecordClass):
+    """
+    Properties of Expression elements that are useful in evaluation
+    """
+
+    # True if none of the elements needs to be evaluated.
+    elements_fully_evaluated: bool = False
+
+    # is_flat: True if none of the elements is an Expression
+    # Some Mathics functions allow flattening of elements. Therefore
+    # it can be useful to know if the elements are already flat
+    is_flat: bool = False
+
+    # is_ordered: True if all of the elements are ordered. Of course this is true,
+    # if there are less than 2 elements. (Ordered is an Attribute of
+    # Mathics function)
+    is_ordered: bool = False
 
 
 # ExpressionCache keeps track of the following attributes for one Expression instance:
@@ -202,19 +222,16 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         self.pattern_sequence = False
         if isinstance(head, str):
             # We should fix or convert to to_expression all nonSymbol uses.
+            # from trepan.api import debug; debug()
             head = Symbol(head)
 
         self._head = head
-
-        # Note: After we make a pass over all Expression() calls, this line will get removed
-        # and replaced with the two commented-out lines below:
-        self._elements, self.elements_properties = convert_expression_elements(
-            elements, from_python
-        )
+        self._elements = elements
         assert isinstance(self._elements, tuple)
         # self._elements = elements
         # self.elements_properties = elements_properties
 
+        self.elements_properties = elements_properties
         self._sequences = None
         self._cache = None
         # comment @mmatera: this cache should be useful in BoxConstruct, but not
@@ -614,6 +631,19 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         """
         if evaluation.timeout:
             return
+
+        if self.elements_properties is None:
+            self._build_elements_properties()
+        #             print(
+        #                 f"""XXX0
+        # elements: {self._elements}
+        # properties: {self.elements_properties}
+        #             """
+        #             )
+        #         else:
+        #             print(f"""XXX1
+        # {self}
+        #             """)
 
         expr = self
         reevaluate = True
@@ -1249,6 +1279,13 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
                 new._build_elements_properties()
             elements = new._elements
 
+        # This has to be done *after*  flatten sequence above which can set
+        # self.elements_properties.is_ordered
+        new.elements_properties.elements_fully_evaluated = (
+            self.elements_properties.elements_fully_evaluated
+        )
+        new.elements_properties.is_ordered = self.elements_properties.is_ordered
+
         # comment @mmatera: I think this is wrong now, because alters singletons... (see PR #58)
         # The idea is to mark which elements was marked as "Unevaluated"
         # Also, this consumes time for long lists, and is useful just for a very unfrequent
@@ -1618,8 +1655,10 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
 
         # update `self._elements` and self._cache with the possible permuted order.
         self.elements = elements
-        self._build_elements_properties()
-
+        if self.elements_properties is None:
+            self._build_elements_properties()
+        else:
+            self.elements_properties.is_ordered = True
         if self._cache:
             self._cache = self._cache.reordered()
 
