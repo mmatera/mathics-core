@@ -35,10 +35,7 @@ from mathics.core.symbols import (
     Atom,
     BaseElement,
     EvalMixin,
-<<<<<<< HEAD
     Evaluable,
-=======
->>>>>>> 518884a9 (Evaluable->EvalMixin)
     Monomial,
     NumericOperators,
     Symbol,
@@ -636,19 +633,6 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         if evaluation.timeout:
             return
 
-        if self.elements_properties is None:
-            self._build_elements_properties()
-        #             print(
-        #                 f"""XXX0
-        # elements: {self._elements}
-        # properties: {self.elements_properties}
-        #             """
-        #             )
-        #         else:
-        #             print(f"""XXX1
-        # {self}
-        #             """)
-
         expr = self
         reevaluate = True
         limit = None
@@ -1199,6 +1183,15 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         if self.elements_properties is None:
             self._build_elements_properties()
 
+<<<<<<< HEAD
+=======
+        # print(
+        # f"""XXX0
+        # elements: {self._elements}
+        # properties: {self.elements_properties}
+        # """
+
+>>>>>>> a80240ed (Bug fixes in preserving elements properties..)
         # @timeit
         def eval_elements():
             # @timeit
@@ -1236,6 +1229,27 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
 
                     if recompute_properties:
                         self._build_elements_properties()
+
+            # @timeit
+            def eval_range(indices):
+                recompute_properties = False
+                for index in indices:
+                    element = elements[index]
+                    if not element.has_form("Unevaluated", 1):
+                        # FIXME this reassigns too much
+                        # and recomputes properties too much
+                        element = (
+                            element.evaluate(evaluation)
+                            if isinstance(element, EvalMixin)
+                            else element
+                        )
+                        if element:
+                            if elements[index] != element:
+                                recompute_properties = True
+                            elements[index] = element
+                        recompute_properties = True
+                if recompute_properties:
+                    self._build_elements_properties()
 
             if (HOLD_ALL | HOLD_ALL_COMPLETE) & attributes:
                 # eval_range(range(0, 0))
@@ -1282,13 +1296,6 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
             if new.elements_properties is None:
                 new._build_elements_properties()
             elements = new._elements
-
-        # This has to be done *after*  flatten sequence above which can set
-        # self.elements_properties.is_ordered
-        new.elements_properties.elements_fully_evaluated = (
-            self.elements_properties.elements_fully_evaluated
-        )
-        new.elements_properties.is_ordered = self.elements_properties.is_ordered
 
         # comment @mmatera: I think this is wrong now, because alters singletons... (see PR #58)
         # The idea is to mark which elements was marked as "Unevaluated"
