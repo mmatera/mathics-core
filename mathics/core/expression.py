@@ -91,8 +91,15 @@ class BoxError(Exception):
 
 
 class ElementsProperties(RecordClass):
-    """
-    Properties of Expression elements that are useful in evaluation
+    """Properties of Expression elements that are useful in evaluation.
+
+    In general, if you have some set of properties that you know should
+    be set a particular way, but don't know about the others, it is safe
+    to set the unknown properties to False.
+
+    When *all* of the properties are unknown, use a `None` value in
+    the Expression.properties field instead of creating an
+    ElementsProperties object with everything set False.
     """
 
     # True if none of the elements needs to be evaluated.
@@ -104,8 +111,14 @@ class ElementsProperties(RecordClass):
     is_flat: bool = False
 
     # is_ordered: True if all of the elements are ordered. Of course this is true,
-    # if there are less than 2 elements. (Ordered is an Attribute of
-    # Mathics function)
+    # if there are less than 2 elements. Ordered is an Attribute of a
+    # Mathics function.
+    #
+    # In rewrite_eval_apply() if a function is not marked as Ordered this attribute
+    # has no effect which means it doesn't matter how it is set. So
+    # when it doubt, it is always safe to set is_ordered to False since at worst
+    # it will cause an ordering operation on elements sometimes. On the other hand, setting
+    # this True elements are not sorted can cause evaluation differences.
     is_ordered: bool = False
 
 
