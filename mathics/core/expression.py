@@ -226,6 +226,10 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
             head = Symbol(head)
 
         self._head = head
+        # for e in elements:
+        #     if isinstance(e, int):
+        #         from trepan.api import debug; debug()
+        #         pass
         self._elements = elements
         assert isinstance(self._elements, tuple)
         # self._elements = elements
