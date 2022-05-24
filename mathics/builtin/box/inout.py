@@ -213,14 +213,6 @@ class InterpretationBox(BoxConstruct):
         """DisplayForm[boxexpr_IntepretationBox]"""
         return boxexpr.elements[0]
 
-    def apply_to_expression(boxexpr, form, evaluation):
-        """ToExpression[boxexpr_IntepretationBox, form___]"""
-        return boxexpr.elements[1]
-
-    def apply_display(boxexpr, evaluation):
-        """DisplayForm[boxexpr_IntepretationBox]"""
-        return boxexpr.elements[0]
-
 
 class SubscriptBox(BoxConstruct):
     """
@@ -460,11 +452,7 @@ class RowBox(BoxConstruct):
     </dl>
     """
 
-    #    def __str__(self):
-    #        return("RowBow  "+  tuple(item.__repr__() for item in self.items).__repr__(), self.box_options)
-
-    #    def __str__(self):
-    #        return self.__repr__()
+    summary_text = "horizontal arrange of boxes"
 
     def __repr__(self):
         return "RowBox[List[" + self.items.__repr__() + "]]"
@@ -579,56 +567,6 @@ class StyleBox(BoxConstruct):
     options = {"ShowStringCharacters": "True", "$OptionSyntax": "Ignore"}
     attributes = protected | read_protected
     summary_text = "associate boxes with styles"
-
-    def boxes_to_text(self, **options):
-        options.pop("evaluation")
-        _options = self.box_options.copy()
-        _options.update(options)
-        options = _options
-        return self.boxes.boxes_to_text(**options)
-
-    def boxes_to_tex(self, **options):
-        _options = self.box_options.copy()
-        _options.update(options)
-        options = _options
-        return self.boxes.boxes_to_tex(**options)
-
-    def boxes_to_mathml(self, **options):
-        _options = self.box_options.copy()
-        _options.update(options)
-        options = _options
-        return self.boxes.boxes_to_mathml(**options)
-
-    def apply_options(self, boxes, evaluation, options):
-        """StyleBox[boxes_, OptionsPattern[]]"""
-        return StyleBox(boxes, style="", options=options)
-
-    def apply_style(self, boxes, style, evaluation, options):
-        """StyleBox[boxes_, style_String, OptionsPattern[]]"""
-        return StyleBox(boxes, style=style, options=options)
-
-    def init(self, boxes, style=None, options={}):
-        # This implementation superseeds Expresion.process_style_box
-        self.style = style
-        self.box_options = options
-        # Here I need to check that is exactly
-        # String and not a BoxedString
-        if type(boxes) is String:
-            self.boxes = _BoxedString(boxes)
-        else:
-            self.boxes = boxes
-
-    def to_expression(self):
-        if self.style:
-            return Expression(
-                self.get_name(),
-                self.boxes,
-                self.style,
-                *options_to_rules(self.box_options)
-            )
-        return Expression(
-            self.get_name(), self.boxes, *options_to_rules(self.box_options)
-        )
 
     def boxes_to_text(self, **options):
         options.pop("evaluation")
