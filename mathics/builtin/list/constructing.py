@@ -21,7 +21,6 @@ from mathics.builtin.lists import (
 from mathics.core.convert import from_sympy
 
 from mathics.core.expression import (
-    ElementsProperties,
     Expression,
     to_expression,
     structure,

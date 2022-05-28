@@ -673,8 +673,8 @@ def test_makeboxes_text(str_expr, str_expected, form, msg):
             format_result.boxes_to_text(evaluation=session.evaluation) == str_expected
         ), msg
     else:
-        str_format = format_result.boxes_to_text(evaluation=session.evaluation)
-        assert str_format == str_expected
+        strresult = format_result.boxes_to_text(evaluation=session.evaluation)
+        assert strresult == str_expected
 
 
 mandatory_tests, fragile_tests = load_tests("tex")

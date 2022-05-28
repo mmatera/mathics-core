@@ -9,7 +9,6 @@ import typing
 from typing import Any, Callable, Iterable, Optional, Tuple, Union
 from itertools import chain
 from bisect import bisect_left
-from recordclass import RecordClass
 
 from mathics.core.atoms import from_python, Number, Integer
 
@@ -35,7 +34,6 @@ from mathics.core.symbols import (
     Atom,
     BaseElement,
     EvalMixin,
-    Evaluable,
     Monomial,
     NumericOperators,
     Symbol,
@@ -88,38 +86,6 @@ class BoxError(Exception):
         super().__init__("Box %s cannot be formatted as %s" % (box, form))
         self.box = box
         self.form = form
-
-
-class ElementsProperties(RecordClass):
-    """Properties of Expression elements that are useful in evaluation.
-
-    In general, if you have some set of properties that you know should
-    be set a particular way, but don't know about the others, it is safe
-    to set the unknown properties to False.
-
-    When *all* of the properties are unknown, use a `None` value in
-    the Expression.properties field instead of creating an
-    ElementsProperties object with everything set False.
-    """
-
-    # True if none of the elements needs to be evaluated.
-    elements_fully_evaluated: bool = False
-
-    # is_flat: True if none of the elements is an Expression
-    # Some Mathics functions allow flattening of elements. Therefore
-    # it can be useful to know if the elements are already flat
-    is_flat: bool = False
-
-    # is_ordered: True if all of the elements are ordered. Of course this is true,
-    # if there are less than 2 elements. Ordered is an Attribute of a
-    # Mathics function.
-    #
-    # In rewrite_eval_apply() if a function is not marked as Ordered this attribute
-    # has no effect which means it doesn't matter how it is set. So
-    # when it doubt, it is always safe to set is_ordered to False since at worst
-    # it will cause an ordering operation on elements sometimes. On the other hand, setting
-    # this True elements are not sorted can cause evaluation differences.
-    is_ordered: bool = False
 
 
 # ExpressionCache keeps track of the following attributes for one Expression instance:
@@ -242,10 +208,8 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         #         pass
         self._elements = elements
         assert isinstance(self._elements, tuple)
-        # self._elements = elements
-        # self.elements_properties = elements_properties
-
         self.elements_properties = elements_properties
+
         self._sequences = None
         self._cache = None
         # comment @mmatera: this cache should be useful in BoxConstruct, but not
@@ -1196,15 +1160,6 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         if self.elements_properties is None:
             self._build_elements_properties()
 
-<<<<<<< HEAD
-=======
-        # print(
-        # f"""XXX0
-        # elements: {self._elements}
-        # properties: {self.elements_properties}
-        # """
-
->>>>>>> a80240ed (Bug fixes in preserving elements properties..)
         # @timeit
         def eval_elements():
             # @timeit
@@ -1242,27 +1197,6 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
 
                     if recompute_properties:
                         self._build_elements_properties()
-
-            # @timeit
-            def eval_range(indices):
-                recompute_properties = False
-                for index in indices:
-                    element = elements[index]
-                    if not element.has_form("Unevaluated", 1):
-                        # FIXME this reassigns too much
-                        # and recomputes properties too much
-                        element = (
-                            element.evaluate(evaluation)
-                            if isinstance(element, EvalMixin)
-                            else element
-                        )
-                        if element:
-                            if elements[index] != element:
-                                recompute_properties = True
-                            elements[index] = element
-                        recompute_properties = True
-                if recompute_properties:
-                    self._build_elements_properties()
 
             if (HOLD_ALL | HOLD_ALL_COMPLETE) & attributes:
                 # eval_range(range(0, 0))
@@ -1678,11 +1612,13 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
             elements.sort()
 
         # update `self._elements` and self._cache with the possible permuted order.
-        self.elements = elements
+        self._elements = elements
         if self.elements_properties is None:
+            # FIXME: this shouldn't be entered.
             self._build_elements_properties()
         else:
             self.elements_properties.is_ordered = True
+
         if self._cache:
             self._cache = self._cache.reordered()
 
