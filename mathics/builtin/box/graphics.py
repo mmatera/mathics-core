@@ -50,6 +50,7 @@ from mathics.core.atoms import (
 from mathics.core.symbols import SymbolList, Symbol
 
 from mathics.core.attributes import hold_all, protected, read_protected
+from mathics.core.formatter import format_element
 
 SymbolStandardForm = Symbol("StandardForm")
 
@@ -1069,7 +1070,9 @@ class InsetBox(_GraphicsElementBox):
             if len(item.elements) not in (1, 2, 3):
                 raise BoxConstructError
             content = item.elements[0]
-            self.content = content.format(graphics.evaluation, "TraditionalForm")
+            self.content = format_element(
+                content, graphics.evaluation, "TraditionalForm"
+            )
             if len(item.elements) > 1:
                 self.pos = Coords(graphics, item.elements[1])
             else:

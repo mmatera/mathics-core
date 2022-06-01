@@ -275,7 +275,9 @@ class Rational(Number):
         return self
 
     def atom_to_boxes(self, f, evaluation):
-        return self.format(evaluation, f.get_name())
+        from mathics.core.formatter import format_element
+
+        return format_element(self, evaluation, f.get_name())
 
     def to_sympy(self, **kwargs):
         return self.value
@@ -611,7 +613,9 @@ class Complex(Number):
         return self
 
     def atom_to_boxes(self, f, evaluation):
-        return self.format(evaluation, f.get_name())
+        from mathics.core.formatter import format_element
+
+        return format_element(self, evaluation, f.get_name())
 
     def __str__(self) -> str:
         return str(self.to_sympy())

@@ -17,6 +17,7 @@ from mathics.builtin.base import (
 from mathics.builtin.box.inout import _BoxedString
 
 from mathics.core.expression import Expression, string_list
+from mathics.core.formatter import format_element
 from mathics.core.symbols import (
     Symbol,
     SymbolFalse,
@@ -901,11 +902,9 @@ class StringRiffle(Builtin):
         # Getting all together
         result = left
         for i in range(len(liststr.leaves)):
-            text = (
-                liststr.leaves[i]
-                .format(evaluation, "System`OutputForm")
-                .boxes_to_text(evaluation=evaluation)
-            )
+            text = format_element(
+                liststr.elements[i], evaluation, "System`OutputForm"
+            ).boxes_to_text(evaluation=evaluation)
             if i == len(liststr.leaves) - 1:
                 result += text + right
             else:

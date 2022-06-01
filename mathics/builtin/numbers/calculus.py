@@ -12,6 +12,7 @@ from typing import Optional
 
 from mathics.core.evaluators import apply_N
 from mathics.core.evaluation import Evaluation
+from mathics.core.formatter import format_element
 from mathics.builtin.base import Builtin, PostfixOperator, SympyFunction
 from mathics.builtin.scoping import dynamic_scoping
 
@@ -1997,7 +1998,7 @@ class SeriesData(Builtin):
         form:StandardForm|TraditionalForm|OutputForm|InputForm]"""
 
         expansion = self.pre_makeboxes(x, x0, data, nmin, nmax, den, form, evaluation)
-        return expansion.format(evaluation, form.get_name())
+        return format_element(expansion, evaluation, form.get_name())
 
 
 class NIntegrate(Builtin):

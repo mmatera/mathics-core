@@ -1686,12 +1686,12 @@ class Dispatch(Atom):
         return "dispatch"
 
     def atom_to_boxes(self, f, evaluation):
-        leaves = self.src.format(evaluation, f.get_name())
-        return Expression(
-            SymbolRowBox,
-            Expression(
-                SymbolList, String("Dispatch"), String("["), leaves, String("]")
-            ),
+        from mathics.core.formatter import format_element, _BoxedString
+        from mathics.builtin.box.inout import RowBox
+
+        box_element = format_element(self.src, evaluation, f.get_name())
+        return RowBox(
+            _BoxedString("Dispatch"), _BoxedString("["), box_element, _BoxedString("]")
         )
 
 

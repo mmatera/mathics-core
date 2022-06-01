@@ -164,6 +164,10 @@ class _BoxedString(BoxElement):
         "System`ShowStringCharacters": "False",
     }
 
+    @property
+    def head(self):
+        return SymbolString
+
     def __init__(self, string: str, **options):
         self.value = string
         self.box_options = {
@@ -344,6 +348,11 @@ def format_element(element, evaluation, form, **kwargs) -> BaseElement:
 
 
 # do_format_*
+
+
+def do_format(element, evaluation, form):
+    do_format_method = element_formatters.get(type(element), do_format_element)
+    return do_format_method(element, evaluation, form)
 
 
 def do_format_element(element, evaluation, form):

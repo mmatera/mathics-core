@@ -34,6 +34,7 @@ from mathics.core.read import (
 
 
 from mathics.core.expression import BoxError, Expression
+from mathics.core.formatter import format_element, do_format
 from mathics.core.atoms import (
     Complex,
     Integer,
@@ -1750,7 +1751,7 @@ class PutAppend(BinaryOperator):
             return
 
         text = [
-            str(e.do_format(evaluation, "System`OutputForm").__str__())
+            str(do_format(e, evaluation, "System`OutputForm").__str__())
             for e in exprs.get_sequence()
         ]
         text = "\n".join(text) + "\n"
@@ -2784,7 +2785,7 @@ class WriteString(Builtin):
 
         exprs = []
         for expri in expr.get_sequence():
-            result = expri.format(evaluation, "System`OutputForm")
+            result = format_element(expri, evaluation, "System`OutputForm")
             try:
                 result = result.boxes_to_text(evaluation=evaluation)
             except BoxError:
