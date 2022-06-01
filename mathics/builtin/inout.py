@@ -11,7 +11,7 @@ import typing
 from typing import Any
 
 
-from mathics.builtin.box.inout import RowBox, to_boxes, _BoxedString
+from mathics.builtin.box.inout import RowBox, to_boxes
 
 from mathics.builtin.base import (
     BoxConstruct,
@@ -28,6 +28,7 @@ from mathics.builtin.options import options_to_rules
 
 from mathics.core.element import EvalMixin
 from mathics.core.expression import Expression, BoxError
+from mathics.core.formatter import _BoxedString
 from mathics.core.symbols import (
     Atom,
     Symbol,

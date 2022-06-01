@@ -18,6 +18,7 @@ from mathics.builtin.base import (
     PrefixOperator,
 )
 from mathics.core.expression import Expression
+from mathics.core.formatter import format_element
 from mathics.core.symbols import (
     Symbol,
     SymbolFalse,
@@ -823,7 +824,7 @@ class ToString(Builtin):
     def apply_form(self, value, form, evaluation, options):
         "ToString[value_, form_, OptionsPattern[ToString]]"
         encoding = options["System`CharacterEncoding"]
-        text = value.format(evaluation, form.get_name(), encoding=encoding)
+        text = format_element(value, evaluation, form.get_name(), encoding=encoding)
         text = text.boxes_to_text(evaluation=evaluation)
         return String(text)
 

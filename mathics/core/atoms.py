@@ -12,15 +12,14 @@ from functools import lru_cache
 
 
 from mathics.core.element import ImmutableValueMixin
-from mathics.core.formatter import encode_mathml, encode_tex, extra_operators
+
+# from mathics.core.formatter import encode_mathml, encode_tex, extra_operators
 from mathics.core.symbols import (
     Atom,
     BaseElement,
     NumericOperators,
     Symbol,
-    SymbolHoldForm,
     SymbolFalse,
-    SymbolFullForm,
     SymbolList,
     SymbolNull,
     SymbolTrue,
@@ -29,8 +28,6 @@ from mathics.core.symbols import (
 
 from mathics.core.systemsymbols import (
     SymbolByteArray,
-    SymbolRowBox,
-    SymbolSuperscriptBox,
     SymbolRule,
 )
 
@@ -100,8 +97,8 @@ def _ExponentFunction(value):
 
 
 def _NumberFormat(man, base, exp, options):
-    from mathics.core.expression import Expression
-    from mathics.builtin.box.inout import RowBox, _BoxedString, SuperscriptBox
+    from mathics.builtin.box.inout import RowBox, SuperscriptBox
+    from mathics.core.formatter import _BoxedString
 
     if exp.get_string_value():
         if options["_Form"] in (
@@ -195,7 +192,7 @@ class Integer(Number):
         super().__init__()
 
     def make_boxes(self, form) -> "_BoxedString":
-        from mathics.builtin.box.inout import _BoxedString
+        from mathics.core.formatter import _BoxedString
 
         if form in ("System`InputForm", "System`FullForm"):
             return _BoxedString(str(self.value), number_as_text=True)
@@ -304,27 +301,6 @@ class Rational(Number):
 
     def denominator(self) -> "Integer":
         return Integer(self.value.as_numer_denom()[1])
-
-    def do_format(self, evaluation, form) -> "Expression":
-        from mathics.core.expression import Expression
-
-        assert isinstance(form, Symbol)
-        if form is SymbolFullForm:
-            return Expression(
-                Expression(SymbolHoldForm, SymbolRational),
-                self.numerator(),
-                self.denominator(),
-            ).do_format(evaluation, form)
-        else:
-            numerator = self.numerator()
-            minus = numerator.value < 0
-            if minus:
-                numerator = Integer(-numerator.value)
-            result = Expression(SymbolDivide, numerator, self.denominator())
-            if minus:
-                result = Expression(SymbolMinus, result)
-            result = Expression(SymbolHoldForm, result)
-            return result.do_format(evaluation, form)
 
     def default_format(self, evaluation, form) -> str:
         return "Rational[%s, %s]" % self.value.as_numer_denom()
@@ -651,31 +627,6 @@ class Complex(Number):
     def to_mpmath(self):
         return mpmath.mpc(self.real.to_mpmath(), self.imag.to_mpmath())
 
-    def do_format(self, evaluation, form) -> "Expression":
-        from mathics.core.expression import Expression
-
-        assert isinstance(form, Symbol)
-
-        if form is SymbolFullForm:
-            return Expression(
-                Expression(SymbolHoldForm, SymbolComplex), self.real, self.imag
-            ).do_format(evaluation, form)
-
-        parts: typing.List[Any] = []
-        if self.is_machine_precision() or not self.real.is_zero:
-            parts.append(self.real)
-        if self.imag.sameQ(Integer(1)):
-            parts.append(SymbolI)
-        else:
-            parts.append(Expression(SymbolTimes, self.imag, SymbolI))
-
-        if len(parts) == 1:
-            result = parts[0]
-        else:
-            result = Expression(SymbolPlus, *parts)
-
-        return Expression(SymbolHoldForm, result).do_format(evaluation, form)
-
     def default_format(self, evaluation, form) -> str:
         return "Complex[%s, %s]" % (
             self.real.default_format(evaluation, form),
@@ -784,7 +735,7 @@ class String(Atom, ImmutableValueMixin):
         return '"%s"' % self.value
 
     def atom_to_boxes(self, f, evaluation):
-        from mathics.builtin.box.inout import _BoxedString
+        from mathics.core.formatter import _BoxedString
 
         inner = str(self.value)
         if f in SYSTEM_SYMBOLS_INPUT_OR_FULL_FORM:
@@ -857,7 +808,7 @@ class ByteArrayAtom(Atom, ImmutableValueMixin):
         return base64.b64encode(self.value).decode("utf8")
 
     def atom_to_boxes(self, f, evaluation) -> "_BoxedString":
-        from mathics.builtin.box.inout import _BoxedString
+        from mathics.core.formatter import _BoxedString
 
         res = _BoxedString('""' + self.__str__() + '""')
         return res

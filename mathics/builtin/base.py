@@ -17,6 +17,7 @@ from mathics.builtin.exceptions import (
 from mathics.core.attributes import no_attributes
 from mathics.core.convert import from_sympy
 from mathics.core.definitions import Definition
+from mathics.core.element import BoxElement
 from mathics.core.parser.util import SystemDefinitions, PyMathicsDefinitions
 from mathics.core.rules import Rule, BuiltinRule, Pattern
 from mathics.core.symbols import (
@@ -710,7 +711,7 @@ class SympyFunction(SympyObject):
         return sympy_expr
 
 
-class BoxExpression(BuiltinElement):
+class BoxExpression(BuiltinElement, BoxElement):
     # This is the base class for the "Final form"
     # of formatted expressions.
     #
