@@ -26,6 +26,14 @@ from mathics.builtin.comparison import expr_min
 from mathics.builtin.lists import list_boxes
 from mathics.builtin.options import options_to_rules
 
+from mathics.core.atoms import (
+    Integer,
+    Real,
+    PrecisionReal,
+    MachineReal,
+    String,
+    StringFromPython,
+)
 from mathics.core.element import EvalMixin, BoxElement
 
 from mathics.core.expression import Expression, BoxError
