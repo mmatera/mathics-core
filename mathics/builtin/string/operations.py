@@ -12,7 +12,6 @@ import zlib
 from mathics.builtin.base import (
     BinaryOperator,
     Builtin,
-    BoxExpression,
 )
 from mathics.builtin.box.inout import _BoxedString
 

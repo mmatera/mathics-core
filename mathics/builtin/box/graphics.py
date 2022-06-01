@@ -41,13 +41,13 @@ from mathics.core.formatter import lookup_method
 from mathics.format.asy_fns import asy_color, asy_number
 
 from mathics.core.expression import Expression
-from mathics.core.symbols import Symbol, SymbolTrue
+
 from mathics.core.atoms import (
     Integer,
     Real,
     String,
 )
-from mathics.core.symbols import SymbolList, Symbol
+from mathics.core.symbols import Symbol, SymbolList, SymbolTrue
 
 from mathics.core.attributes import hold_all, protected, read_protected
 from mathics.core.formatter import format_element

@@ -378,7 +378,7 @@ class EvalMixin:
         """
         return False
 
-    def rewrite_apply_eval_step(self, evaluation) -> Tuple["Expression", bool]:
+    def rewrite_apply_eval_step(self, evaluation) -> Tuple["BaseElement", bool]:
         """
         Performs a since rewrite/apply/eval step used in
         evaluation.

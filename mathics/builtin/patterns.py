@@ -58,7 +58,7 @@ from mathics.core.symbols import (
     SymbolList,
     SymbolTrue,
 )
-from mathics.core.systemsymbols import SymbolBlank, SymbolDispatch, SymbolRowBox
+from mathics.core.systemsymbols import SymbolBlank, SymbolDispatch
 from mathics.core.rules import Rule
 from mathics.core.pattern import Pattern, StopGenerator
 
@@ -673,7 +673,7 @@ class PatternTest(BinaryOperator, PatternObject):
                 else:
                     test_expr = Expression(self.test, item)
                     test_value = test_expr.evaluate(evaluation)
-                    if not test_value is SymbolTrue:
+                    if test_value is not SymbolTrue:
                         break
                         # raise StopGenerator
             else:

@@ -69,8 +69,8 @@ TMP_DIR = tempfile.gettempdir()
 SymbolPath = Symbol("$Path")
 SymbolBinaryWrite = Symbol("BinaryWrite")
 
-### FIXME: All of this is related to Read[]
-### it can be moved somewhere else.
+# ## FIXME: All of this is related to Read[]
+# ## it can be moved somewhere else.
 
 
 class Input_(Predefined):
