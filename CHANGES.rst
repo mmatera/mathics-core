@@ -67,8 +67,10 @@ Internals
 * ``BoxConstruction`` -> ``BoxExpression``
 * the method ``Element.is_true()`` was removed in favor of ``is SymbolTrue``
 * ``N[_,_,Method->method]`` was reworked. Issue #137.
-* The methods  ``boxes_to_*`` were moved to ``BoxExpression``.
-
+* The methods  ``boxes_to_*`` were moved to ``BoxElement``.
+* ``flatten_*_sequence`` methods were removed from the interface of ``Atom``.
+* ``format`` and ``do_format`` was removed from the interface of ``BaseElement`` and its subclasses, and promoted to functions of the module ``mathics.core.formatting``.
+  
 
 Package update
 ++++++++++++++
