@@ -12,22 +12,27 @@ from functools import lru_cache
 
 
 from mathics.core.element import ImmutableValueMixin
-
-# from mathics.core.formatter import encode_mathml, encode_tex, extra_operators
 from mathics.core.symbols import (
     Atom,
     BaseElement,
     NumericOperators,
     Symbol,
+    SymbolDivide,
+    SymbolHoldForm,
     SymbolFalse,
     SymbolList,
     SymbolNull,
+    SymbolPlus,
+    SymbolTimes,
     SymbolTrue,
     system_symbols,
 )
 
 from mathics.core.systemsymbols import (
     SymbolByteArray,
+    SymbolComplex,
+    SymbolMinus,
+    SymbolRational,
     SymbolRule,
 )
 
@@ -45,13 +50,7 @@ import base64
 # We have to be able to match mpmath values with sympy values
 COMPARE_PREC = 50
 
-SymbolComplex = Symbol("Complex")
-SymbolDivide = Symbol("Divide")
 SymbolI = Symbol("I")
-SymbolMinus = Symbol("Minus")
-SymbolPlus = Symbol("Plus")
-SymbolRational = Symbol("Rational")
-SymbolTimes = Symbol("Times")
 
 SYSTEM_SYMBOLS_INPUT_OR_FULL_FORM = system_symbols("InputForm", "FullForm")
 

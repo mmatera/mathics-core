@@ -64,13 +64,15 @@ from mathics.core.evaluators import apply_N
 from mathics.core.expression import Expression, structure, to_expression
 
 from mathics.core.interrupt import BreakInterrupt, ContinueInterrupt, ReturnInterrupt
+from mathics.core.list import ListExpression
 from mathics.core.symbols import (
     Atom,
     Symbol,
-    SymbolList,
-    strip_context,
-    SymbolTrue,
     SymbolFalse,
+    SymbolList,
+    SymbolPlus,
+    SymbolTrue,
+    strip_context,
 )
 
 from mathics.core.systemsymbols import (
@@ -80,7 +82,6 @@ from mathics.core.systemsymbols import (
     SymbolLess,
     SymbolLessEqual,
     SymbolMakeBoxes,
-    SymbolPlus,
     SymbolRule,
     SymbolSequence,
 )
@@ -1009,8 +1010,8 @@ class _IterationFunction(Builtin):
         "%(name)s[expr_, {i_Symbol, imin_, imax_, di_}]"
 
         if isinstance(self, SympyFunction) and di.get_int_value() == 1:
-            whole_expr = Expression(
-                self.get_name(), expr, Expression(SymbolList, i, imin, imax)
+            whole_expr = to_expression(
+                self.get_name(), expr, ListExpression(i, imin, imax)
             )
             sympy_expr = whole_expr.to_sympy(evaluation=evaluation)
             if sympy_expr is None:
@@ -1097,7 +1098,7 @@ class _IterationFunction(Builtin):
 
         sequ = sequ.get_sequence()
         name = self.get_name()
-        return Expression(name, Expression(name, expr, *sequ), first)
+        return to_expression(name, to_expression(name, expr, *sequ), first)
 
 
 class Join(Builtin):
