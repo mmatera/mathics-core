@@ -288,7 +288,7 @@ class PatternsOrderedQ(Builtin):
     def apply(self, p1, p2, evaluation):
         "PatternsOrderedQ[p1_, p2_]"
 
-        if p1.get_sort_key(True) <= p2.get_sort_key(True):
+        if p1.cached_get_sort_key(True) <= p2.cached_get_sort_key(True):
             return SymbolTrue
         else:
             return SymbolFalse

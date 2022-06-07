@@ -105,8 +105,8 @@ class KeyComparable:
     def get_sort_key(self):
         raise NotImplementedError
 
-    def cached_get_sort_key(self, pattern=False):
-        if pattern:
+    def cached_get_sort_key(self, pattern_sort=False):
+        if pattern_sort:
             if hasattr(self, "pattern_sort_key"):
                 return self.pattern_sort_key
             sort_key = self.get_sort_key(True)

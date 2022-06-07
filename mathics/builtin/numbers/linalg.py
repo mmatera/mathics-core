@@ -247,7 +247,7 @@ class Eigenvalues(Builtin):
         eigenvalues = [(from_sympy(v), c) for (v, c) in eigenvalues]
 
         # Sort the eigenvalues by their sort key
-        eigenvalues.sort(key=lambda v: v[0].get_sort_key())
+        eigenvalues.sort(key=lambda v: v[0].cached_get_sort_key())
 
         eigenvalues = [v for (v, c) in eigenvalues for _ in range(c)]
 
@@ -307,9 +307,9 @@ class Eigenvectors(Builtin):
                     key=lambda v: (abs(v[0]), -re(v[0]), -im(v[0])), reverse=True
                 )
             except TypeError:
-                eigenvects.sort(key=lambda v: from_sympy(v[0]).get_sort_key())
+                eigenvects.sort(key=lambda v: from_sympy(v[0]).cached_get_sort_key())
         else:
-            eigenvects.sort(key=lambda v: from_sympy(v[0]).get_sort_key())
+            eigenvects.sort(key=lambda v: from_sympy(v[0]).cached_get_sort_key())
 
         result = []
         for val, count, basis in eigenvects:

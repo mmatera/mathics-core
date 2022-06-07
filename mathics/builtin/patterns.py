@@ -1686,7 +1686,7 @@ class Dispatch(Atom):
         self._head = SymbolDispatch
 
     def get_sort_key(self):
-        return self.src.get_sort_key()
+        return self.src.cached_get_sort_key()
 
     def get_atom_name(self):
         return "System`Dispatch"

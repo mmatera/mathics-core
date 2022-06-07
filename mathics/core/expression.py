@@ -1309,7 +1309,7 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
     def shallow_copy(self) -> "Expression":
         # this is a minimal, shallow copy: head, elements are shared with
         # the original, only the Expression instance is new.
-
+        return self
         expr = Expression(
             self._head, *self._elements, elements_properties=self.elements_properties
         )

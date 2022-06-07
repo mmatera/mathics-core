@@ -683,7 +683,13 @@ class Complex(Number):
         if pattern_sort:
             return super().get_sort_key(True)
         else:
-            return [0, 0, self.real.get_sort_key()[2], self.imag.get_sort_key()[2], 1]
+            return [
+                0,
+                0,
+                self.real.cached_get_sort_key()[2],
+                self.imag.cached_get_sort_key()[2],
+                1,
+            ]
 
     def sameQ(self, other) -> bool:
         """Mathics SameQ"""
