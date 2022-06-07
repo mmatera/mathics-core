@@ -105,28 +105,41 @@ class KeyComparable:
     def get_sort_key(self):
         raise NotImplementedError
 
+    def cached_get_sort_key(self, pattern_sort=False):
+        if pattern_sort:
+            if hasattr(self, "pattern_sort_key"):
+                return self.pattern_sort_key
+            sort_key = self.get_sort_key(True)
+            self.pattern_sort_key = sort_key
+        else:
+            if hasattr(self, "sort_key"):
+                return self.sort_key
+            sort_key = self.get_sort_key()
+            self.sort_key = sort_key
+        return sort_key
+
     def __eq__(self, other) -> bool:
         return (
-            hasattr(other, "get_sort_key")
-            and self.get_sort_key() == other.get_sort_key()
+            hasattr(other, "cached_get_sort_key")
+            and self.cached_get_sort_key() == other.cached_get_sort_key()
         )
 
     def __gt__(self, other) -> bool:
-        return self.get_sort_key() > other.get_sort_key()
+        return self.cached_get_sort_key() > other.cached_get_sort_key()
 
     def __ge__(self, other) -> bool:
-        return self.get_sort_key() >= other.get_sort_key()
+        return self.cached_get_sort_key() >= other.cached_get_sort_key()
 
     def __le__(self, other) -> bool:
-        return self.get_sort_key() <= other.get_sort_key()
+        return self.cached_get_sort_key() <= other.cached_get_sort_key()
 
     def __lt__(self, other) -> bool:
-        return self.get_sort_key() < other.get_sort_key()
+        return self.cached_get_sort_key() < other.cached_get_sort_key()
 
     def __ne__(self, other) -> bool:
         return (
             not hasattr(other, "get_sort_key")
-        ) or self.get_sort_key() != other.get_sort_key()
+        ) or self.cached_get_sort_key() != other.cached_get_sort_key()
 
 
 class BaseElement(KeyComparable):

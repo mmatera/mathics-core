@@ -382,7 +382,7 @@ class Delete(Builtin):
             if positions.elements[0].has_form("List", None)
             else [positions]
         )
-        positions.sort(key=lambda e: e.get_sort_key(pattern_sort=True))
+        positions.sort(key=lambda e: e.cached_get_sort_key(pattern_sort=True))
         newexpr = expr
         for position in positions:
             pos = [p.get_int_value() for p in position.get_elements()]

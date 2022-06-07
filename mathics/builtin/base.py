@@ -812,7 +812,7 @@ class BoxExpression(BuiltinElement):
         return self.get_name()
 
     def get_sort_key(self):
-        return self.to_expression().get_sort_key()
+        return self.to_expression().cached_get_sort_key()
 
     def get_string_value(self):
         return "-@" + self.get_head_name() + "@-"
@@ -938,7 +938,7 @@ class PatternObject(BuiltinElement, Pattern):
         return (1, 1)
 
     def get_sort_key(self, pattern_sort=False):
-        return self.expr.get_sort_key(pattern_sort=pattern_sort)
+        return self.expr.cached_get_sort_key(pattern_sort=pattern_sort)
 
 
 class NegativeIntegerException(Exception):
