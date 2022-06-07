@@ -406,7 +406,7 @@ class Real(Number):
                     self.to_mpmath(), other.to_mpmath(), abs_eps=0, rel_eps=rel_eps
                 )
         else:
-            return self.get_sort_key() == other.get_sort_key()
+            return self.cached_get_sort_key() == other.cached_get_sort_key()
 
     def __ne__(self, other) -> bool:
         # Real is a total order
@@ -740,7 +740,7 @@ class Complex(Number):
         if isinstance(other, Complex):
             return self.real == other.real and self.imag == other.imag
         else:
-            return self.get_sort_key() == other.get_sort_key()
+            return self.cached_get_sort_key() == other.cached_get_sort_key()
 
     def __getnewargs__(self):
         return (self.real, self.imag)

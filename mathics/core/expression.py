@@ -723,7 +723,6 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
             6: leaves / 0 for atoms
             7: 0/1:        0 for Condition
             """
-
             head = self._head
             pattern = 0
             if head is SymbolBlank:
@@ -744,40 +743,42 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
                     1,
                     1,
                     0,
-                    head.get_sort_key(True),
-                    tuple(element.get_sort_key(True) for element in self._elements),
+                    head.cached_get_sort_key(True),
+                    tuple(
+                        element.cached_get_sort_key(True) for element in self._elements
+                    ),
                     1,
                 ]
 
             if head is SymbolPatternTest:
                 if len(self._elements) != 2:
                     return [3, 0, 0, 0, 0, head, self._elements, 1]
-                sub = self._elements[0].get_sort_key(True)
+                sub = self._elements[0].cached_get_sort_key(True)
                 sub[2] = 0
                 return sub
             elif head is SymbolCondition:
                 if len(self._elements) != 2:
                     return [3, 0, 0, 0, 0, head, self._elements, 1]
-                sub = self._elements[0].get_sort_key(True)
+                sub = self._elements[0].cached_get_sort_key(True)
                 sub[7] = 0
                 return sub
             elif head is SymbolPattern:
                 if len(self._elements) != 2:
                     return [3, 0, 0, 0, 0, head, self._elements, 1]
-                sub = self._elements[1].get_sort_key(True)
+                sub = self._elements[1].cached_get_sort_key(True)
                 sub[3] = 0
                 return sub
             elif head is SymbolOptional:
                 if len(self._elements) not in (1, 2):
                     return [3, 0, 0, 0, 0, head, self._elements, 1]
-                sub = self._elements[0].get_sort_key(True)
+                sub = self._elements[0].cached_get_sort_key(True)
                 sub[4] = 1
                 return sub
             elif head is SymbolAlternatives:
                 min_key = [4]
                 min = None
                 for element in self._elements:
-                    key = element.get_sort_key(True)
+                    key = element.cached_get_sort_key(True)
                     if key < min_key:
                         min = element
                         min_key = key
@@ -788,7 +789,7 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
             elif head is SymbolVerbatim:
                 if len(self._elements) != 1:
                     return [3, 0, 0, 0, 0, head, self._elements, 1]
-                return self._elements[0].get_sort_key(True)
+                return self._elements[0].cached_get_sort_key(True)
             elif head is SymbolOptionsPattern:
                 return [2, 40, 0, 1, 1, 0, head, self._elements, 1]
             else:
@@ -800,10 +801,13 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
                     1,
                     1,
                     0,
-                    head.get_sort_key(True),
+                    head.cached_get_sort_key(True),
                     tuple(
                         chain(
-                            (element.get_sort_key(True) for element in self._elements),
+                            (
+                                element.cached_get_sort_key(True)
+                                for element in self._elements
+                            ),
                             ([4],),
                         )
                     ),
@@ -1438,13 +1442,16 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         # list sort method. Another approach would be to use sorted().
         elements = self.get_mutable_elements()
         if pattern:
-            elements.sort(key=lambda e: e.get_sort_key(pattern_sort=True))
+            elements.sort(key=lambda e: e.cached_get_sort_key(pattern_sort=True))
         else:
             elements.sort()
 
         # update `self._elements` and self._cache with the possible permuted order.
         self.elements = elements
-        self._build_elements_properties()
+        if self.elements_properties is None:
+            self._build_elements_properties()
+        else:
+            self.elements_properties.is_ordered = True
 
         if self._cache:
             self._cache = self._cache.reordered()
