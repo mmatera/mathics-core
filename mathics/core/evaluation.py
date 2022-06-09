@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from queue import Queue
 import time
 
 
@@ -8,7 +7,9 @@ import os
 import sys
 
 # maybe better use process
-from threading import Thread, stack_size as set_thread_stack_size
+from threading import stack_size as set_thread_stack_size
+from multiprocessing import Process, Queue
+
 
 from typing import Tuple
 
@@ -58,47 +59,6 @@ SymbolPrePrint = Symbol("System`$PrePrint")
 SymbolPost = Symbol("System`$Post")
 
 
-def _thread_target(request, queue) -> None:
-    try:
-        result = request()
-        queue.put((True, result))
-    except BaseException:
-        exc_info = sys.exc_info()
-        queue.put((False, exc_info))
-
-
-def kill_thread(thread) -> bool:
-    """
-    Tries to kill a thread.
-    If successful, returns True; otherwise, False.
-    """
-    # See https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
-
-    from ctypes import pythonapi, py_object, c_long
-
-    thread_id = None
-    # First, look for the thread id
-    if hasattr(thread, "_thread_id"):
-        thread_id = thread._thread_id
-    else:
-        import threading
-
-        for id, thr in threading._active.items():
-            if thr is thread:
-                thread_id = id
-    if thread_id is None:
-        # The thread does not exists anymore. Our work has been done.
-        return True
-
-    result = pythonapi.PyThreadState_SetAsyncExc(
-        c_long(thread_id), py_object(SystemExit)
-    )
-    if result == 1:
-        return True
-    pythonapi.PyThreadState_SetAsyncExc(c_long(thread_id), None)
-    return False
-
-
 # MAX_RECURSION_DEPTH gives the maximum value allowed for $RecursionLimit. it's usually set to its
 # default settings.DEFAULT_MAX_RECURSION_DEPTH.
 
@@ -137,33 +97,27 @@ def run_with_timeout_and_stack(request, timeout, evaluation):
     # MATHICS_MAX_RECURSION_DEPTH. if it is set, we always use a thread, even if timeout is None, in
     # order to be able to set the thread stack size.
 
-    if MAX_RECURSION_DEPTH > settings.DEFAULT_MAX_RECURSION_DEPTH:
-        set_thread_stack_size(python_stack_size(MAX_RECURSION_DEPTH))
-    elif timeout is None:
+    # if MAX_RECURSION_DEPTH > settings.DEFAULT_MAX_RECURSION_DEPTH:
+    #    set_thread_stack_size(python_stack_size(MAX_RECURSION_DEPTH))
+    # elif timeout is None:
+    if timeout is None:
         return request()
 
-    queue = Queue(maxsize=1)  # stores the result or exception
-    thread = Thread(target=_thread_target, args=(request, queue))
-    thread.start()
+    def _process_target(request, queue) -> None:
+        try:
+            result = request()
+            queue.put((True, result))
+        except BaseException:
+            exc_info = sys.exc_info()
+            queue.put((False, exc_info))
 
-    # Thead join(timeout) can leave zombie threads (we are the parent)
-    # when a time out occurs, but the thread hasn't terminated.  See
-    # https://docs.python.org/3/library/multiprocessing.shared_memory.html
-    # for a detailed discussion of this.
-    #
-    # To reduce this problem, we make use of specific properties of
-    # the Mathics evaluator: if we set "evaluation.timeout", the
-    # next call to "Expression.evaluate" in the thread will finish it
-    # immediately.
-    #
-    # However this still will not terminate long-running processes
-    # in Sympy or or libraries called by Mathics that might hang or run
-    # for a long time.
-    thread.join(timeout)
-    if thread.is_alive():
+    queue = Queue(maxsize=1)  # stores the result or exception
+    process = Process(target=_process_target, args=(request, queue))
+    process.start()
+    process.join(timeout)
+    if process.is_alive():
         evaluation.timeout = True
-        if not kill_thread(thread):
-            evaluation.message("General", "warn", "thread couldn't be stopped.")
+        process.terminate()
         evaluation.stopped = False
         evaluation.timeout = False
         raise TimeoutInterrupt()
