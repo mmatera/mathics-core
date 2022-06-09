@@ -17,7 +17,7 @@ jobs:
     - name: Set up Pyston ${{ matrix.pyston-version }}
       run: |
         wget https://github.com/pyston/pyston/releases/download/pyston_2.3.4/pyston_2.3.4_20.04_amd64.deb
-        sudo apt-get install tk8.6-blt2.5
+        sudo apt-get install tk8.6-blt2.5 libffi7
         sudo dpkg -i pyston_2.3.4_20.04_amd64.deb
     - name: Install dependencies
       run: |
