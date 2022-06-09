@@ -47,9 +47,9 @@ def test_timeconstrained_sympy():
 
 
 def test_timeremaining():
-    str_expr = "TimeConstrained[1+2; TimeRemaining[], 0.9]"
+    str_expr = "TimeConstrained[1+2; TimeRemaining[], 10]"
     result = evaluate(str_expr)
-    assert result is None or 0 < result.to_python() < 0.9
+    assert result is None or 0 < result.to_python() < 10.0
 
 
 def test_datelist():
