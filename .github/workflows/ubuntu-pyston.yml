@@ -30,5 +30,5 @@ jobs:
     - name: Test Mathics
       run: |
         # py.test seems to use always the default python interpreter of the system. Any idea about how to
-	# change this behaviour?
+        # change this behaviour?
         make -j3 PYTHON=pyston doctest
