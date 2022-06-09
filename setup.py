@@ -131,7 +131,7 @@ INSTALL_REQUIRES += [
     "palettable",
     "pint",
     "python-dateutil",
-    "llvmlite",
+    #    "llvmlite",
     "recordclass",
     "requests",
 ]
