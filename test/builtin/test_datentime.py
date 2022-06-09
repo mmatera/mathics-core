@@ -19,7 +19,8 @@ def test_timeconstrained_assignment_1():
     # if all the operations where instantaneous, then the
     # value of ``a`` should be 10. However, in macOS, ``a``
     # just reach 3...
-    assert evaluate("a").to_python() <= 10
+    result = evaluate("a").to_python()
+    assert result <= 10
 
 
 def test_timeconstrained_assignment_2():
@@ -42,7 +43,6 @@ def test_timeconstrained_sympy():
     # exception.
     str_expr = "TimeConstrained[Integrate[Sin[x]^1000000, x], 0.9]"
     result = evaluate(str_expr)
-
     assert result is None or result == Symbol("$Aborted")
 
 

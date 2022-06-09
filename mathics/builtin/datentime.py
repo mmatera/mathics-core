@@ -1152,7 +1152,7 @@ class TimeConstrained(Builtin):
             evaluation.timeout_queue.append((t, datetime.now().timestamp()))
 
             def request():
-                expr.evaluate(evaluation)
+                return expr.evaluate(evaluation)
 
             res = run_with_timeout_and_stack(request, t, evaluation)
         except TimeoutInterrupt:
