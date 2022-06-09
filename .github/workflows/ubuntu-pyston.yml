@@ -17,11 +17,11 @@ jobs:
     - name: Set up Pyston ${{ matrix.pyston-version }}
       run: |
         wget https://github.com/pyston/pyston/releases/download/pyston_2.3.4/pyston_2.3.4_20.04_amd64.deb
-        dpkg -i pyston_2.3.4_20.04_amd64.deb
+        sudo dpkg -i pyston_2.3.4_20.04_amd64.deb
     - name: Install dependencies
       run: |
         sudo apt-get update -qq && sudo apt-get install -qq liblapack-dev llvm-dev
-        pyston -m pip install --upgrade pip
+        sudo pyston -m pip install --upgrade pip
     - name: Install Mathics with full dependencies
       run: |
         make develop
