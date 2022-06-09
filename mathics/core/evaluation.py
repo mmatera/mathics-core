@@ -88,6 +88,15 @@ def set_python_recursion_limit(n) -> None:
         raise OverflowError
 
 
+def _process_target(request, queue) -> None:
+    try:
+        result = request()
+        queue.put((True, result))
+    except BaseException:
+        exc_info = sys.exc_info()
+        queue.put((False, exc_info))
+
+
 def run_with_timeout_and_stack(request, timeout, evaluation):
     """
     interrupts evaluation after a given time period. Provides a suitable stack environment.
@@ -102,14 +111,6 @@ def run_with_timeout_and_stack(request, timeout, evaluation):
     # elif timeout is None:
     if timeout is None:
         return request()
-
-    def _process_target(request, queue) -> None:
-        try:
-            result = request()
-            queue.put((True, result))
-        except BaseException:
-            exc_info = sys.exc_info()
-            queue.put((False, exc_info))
 
     queue = Queue(maxsize=1)  # stores the result or exception
     process = Process(target=_process_target, args=(request, queue))
