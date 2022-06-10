@@ -160,6 +160,7 @@ def check_requires_list(cls):
             requires_cache[lib] = lib_is_installed
 
         if not lib_is_installed:
+            print("   ", lib, " required by ", cls.__name__, " is not available.")
             return False
     return True
 
@@ -1085,6 +1086,7 @@ class PyMathicsDocumentation(Documentation):
                 == self.pymathicsmodule.__name__
             ):  # nopep8
                 if not check_requires_list(var):
+                    print("  skiping ", var.__name__)
                     continue
                 instance = var(expression=False)
                 if isinstance(instance, Builtin):
