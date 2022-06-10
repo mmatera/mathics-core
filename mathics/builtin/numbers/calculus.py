@@ -2097,7 +2097,7 @@ class NIntegrate(Builtin):
         messages.update(scipy_nintegrate_messages)
     except Exception as e:
         print(e)
-        print("scipy integrators was not loaded.")
+        print("scipy integrators were not loaded.")
         pass
 
     methods.update(

@@ -143,11 +143,12 @@ requires_cache = {}
 
 
 def check_requires_list(cls):
+    1 / 0
     global requires_cache
-
+    print("check requires for ", cls)
     if not hasattr(cls, "requires"):
         return True
-
+    print("   ", cls.requires)
     requires = cls.requires
     for lib in requires:
         lib_is_installed = requires_cache.get(lib, None)
@@ -933,13 +934,17 @@ class MathicsMainDocumentation(Documentation):
         object to the chapter, a DocChapter object.
         "section_object" is either a Python module or a Class object instance.
         """
+        # FIXME Use check_requires_installed()
         installed = True
+        print("trying to add", section_object.__class__)
         for package in getattr(section_object, "requires", []):
             try:
                 importlib.import_module(package)
             except ImportError:
                 installed = False
                 break
+        if not installed:
+            return
         # FIXME add an additional mechanism in the module
         # to allow a docstring and indicate it is not to go in the
         # user manual
@@ -976,6 +981,7 @@ class MathicsMainDocumentation(Documentation):
         operator=None,
         in_guide=False,
     ):
+        # FIXME Use check_requires_installed()
         installed = True
         for package in getattr(instance, "requires", []):
             try:
@@ -987,6 +993,9 @@ class MathicsMainDocumentation(Documentation):
         # FIXME add an additional mechanism in the module
         # to allow a docstring and indicate it is not to go in the
         # user manual
+        if not installed:
+            return
+
         if not instance.__doc__:
             return
         subsection = DocSubsection(
