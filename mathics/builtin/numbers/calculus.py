@@ -2077,6 +2077,7 @@ class NIntegrate(Builtin):
         "Automatic": (None, False),
     }
     try:
+        # builtin integrators
         from mathics.algorithm.integrators import (
             integrator_methods,
             integrator_messages,
@@ -2088,6 +2089,7 @@ class NIntegrate(Builtin):
         pass
 
     try:
+        # scipy integrators
         from mathics.builtin.scipy_utils.integrators import (
             scipy_nintegrate_methods,
             scipy_nintegrate_messages,
@@ -2096,11 +2098,9 @@ class NIntegrate(Builtin):
         methods.update(scipy_nintegrate_methods)
         messages.update(scipy_nintegrate_messages)
     except Exception as e:
-        print(e)
-        print("scipy integrators were not loaded.")
         pass
 
-    methods.update(
+    messages.update(
         {
             "bdmtd": "The Method option should be a "
             + "built-in method name in {`"

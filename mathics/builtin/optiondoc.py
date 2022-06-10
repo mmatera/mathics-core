@@ -176,11 +176,13 @@ class MaxRecursion(Builtin):
       <dd>is an option for functions like NIntegrate and Plot that specifies how many recursive subdivisions can be made.
     </dl>
 
+    >> NIntegrate[Exp[-10^8 x^2], {x, -1, 1}, Method->"Internal", MaxRecursion -> 3]
+     =  0.0777778
+    >> NIntegrate[Exp[-10^8 x^2], {x, -1, 1}, Method->"Internal", MaxRecursion -> 6]
+     =  0.00972222
     """
 
     # This test does not pass if scipy is not available...
-    # >> NIntegrate[Exp[-10^8 x^2], {x, -1, 1}, MaxRecursion -> 3] < 1.*^-5
-    # =  True
 
     summary_text = "maximum number of recursive subdivisions"
 
