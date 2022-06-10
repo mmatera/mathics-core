@@ -145,18 +145,18 @@ requires_lib_cache = {}
 def check_requires_list(requires: list) -> bool:
     global requires_cache
 
-    for lib in requires:
-        lib_is_installed = requires_lib_cache.get(lib, None)
+    for package in requires:
+        lib_is_installed = requires_lib_cache.get(package, None)
         if lib_is_installed is None:
             lib_is_installed = True
             try:
                 importlib.import_module(package)
             except ImportError:
                 lib_is_installed = False
-            requires_lib_cache[lib] = lib_is_installed
+            requires_lib_cache[package] = lib_is_installed
 
         if not lib_is_installed:
-            print("   ", lib, " required by ", cls.__name__, " is not available.")
+            print("   ", package, " required by ", cls.__name__, " is not available.")
             return False
     return True
 
