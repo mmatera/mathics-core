@@ -1285,18 +1285,9 @@ class _BaseFinder(Builtin):
     This class is the basis class for FindRoot, FindMinimum and FindMaximum.
     """
 
-    options = {
-        "MaxIterations": "100",
-        "Method": "Automatic",
-        "AccuracyGoal": "Automatic",
-        "PrecisionGoal": "Automatic",
-        "StepMonitor": "None",
-        "EvaluationMonitor": "None",
-        "Jacobian": "Automatic",
-    }
-
     attributes = hold_all | protected
-
+    requires = ["scipy"]
+    methods = {}
     messages = {
         "snum": "Value `1` is not a number.",
         "nnum": "The function value is not a number at `1` = `2`.",
@@ -1313,7 +1304,15 @@ class _BaseFinder(Builtin):
         ),
     }
 
-    methods = {}
+    options = {
+        "MaxIterations": "100",
+        "Method": "Automatic",
+        "AccuracyGoal": "Automatic",
+        "PrecisionGoal": "Automatic",
+        "StepMonitor": "None",
+        "EvaluationMonitor": "None",
+        "Jacobian": "Automatic",
+    }
 
     def apply(self, f, x, x0, evaluation, options):
         "%(name)s[f_, {x_, x0_}, OptionsPattern[]]"
@@ -2048,6 +2047,7 @@ class NIntegrate(Builtin):
 
     """
 
+    requires = ["scipy"]
     summary_text = "numerical integration in one or several variables"
     messages = {
         "bdmtd": "The Method option should be a built-in method name.",
