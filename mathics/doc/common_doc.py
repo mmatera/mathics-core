@@ -970,7 +970,6 @@ class MathicsMainDocumentation(Documentation):
         operator=None,
         in_guide=False,
     ):
-        # FIXME Use check_requires_installed()
         installed = check_requires_list(getattr(instance, "requires", []))
 
         # FIXME add an additional mechanism in the module
