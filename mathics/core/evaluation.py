@@ -8,7 +8,9 @@ import sys
 
 # maybe better use process
 from threading import stack_size as set_thread_stack_size
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, set_start_method as mp_set_start_method
+
+mp_set_start_method("fork")
 
 
 from typing import Tuple

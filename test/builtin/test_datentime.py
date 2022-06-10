@@ -35,6 +35,20 @@ def test_timeconstrained_assignment_2():
     assert evaluate("a").to_python() == 1.0
 
 
+def test_timeconstrained_assignment_3():
+    # This test checks if the assignment is really aborted
+    # if the RHS exceeds the wall time.
+    str_expr1 = (
+        "a=1.;TimeConstrained[TimeConstrained[a=(Pause[.2];2.), .1, a=-2], .1,a=-3]"
+    )
+    result = evaluate(str_expr1)
+    str_expected = "-3"
+    expected = evaluate(str_expected)
+    assert result == expected
+    time.sleep(0.2)
+    assert evaluate("a").to_python() == -3
+
+
 def test_timeconstrained_sympy():
     # This test tries to run a large and onerous calculus that runs
     # in sympy (outside the control of Mathics).
