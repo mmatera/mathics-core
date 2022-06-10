@@ -177,7 +177,7 @@ class MaxRecursion(Builtin):
     </dl>
 
     >> NIntegrate[Exp[-10^8 x^2], {x, -1, 1}, MaxRecursion -> 3] < 1.*^-5
-     =  True
+     =  ...
     """
 
     summary_text = "maximum number of recursive subdivisions"
