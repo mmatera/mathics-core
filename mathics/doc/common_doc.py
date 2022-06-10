@@ -156,7 +156,6 @@ def check_requires_list(requires: list) -> bool:
             requires_lib_cache[package] = lib_is_installed
 
         if not lib_is_installed:
-            print("   ", package, " required by ", cls.__name__, " is not available.")
             return False
     return True
 
