@@ -22,9 +22,9 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update -qq && sudo apt-get install -qq liblapack-dev llvm-11 llvm-11-dev
-        export LLVM_CONFIG=/usr/lib/llvm-11/bin/llvm-config
+	sudo /usr/lib/llvm-11/bin/llvm-config
         sudo pyston -m pip install --upgrade pip
-        sudo pyston -m pip install llvmlite
+        sudo LLVM_CONFIG=/usr/lib/llvm-11/bin/llvm-config  pyston -m pip install llvmlite
     - name: Install Mathics with minimal dependencies
       run: |
         make develop
