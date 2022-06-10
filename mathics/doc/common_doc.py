@@ -138,6 +138,32 @@ SPECIAL_COMMANDS = {
 test_result_map = {}
 
 
+# TODO: Use this when checking requires for modules.
+requires_cache = {}
+
+
+def check_requires_list(cls):
+    global requires_cache
+
+    if not hasattr(cls, "requires"):
+        return True
+
+    requires = cls.requires
+    for lib in requires:
+        lib_is_installed = requires_cache.get(lib, None)
+        if lib_is_installed is None:
+            lib_is_installed = True
+            try:
+                importlib.import_module(package)
+            except ImportError:
+                lib_is_installed = False
+            requires_cache[lib] = lib_is_installed
+
+        if not lib_is_installed:
+            return False
+    return True
+
+
 def get_results_by_test(test_expr: str, full_test_key: list, doc_data: dict) -> list:
     """
     Sometimes test numbering is off, either due to bugs or changes since the
@@ -1058,6 +1084,8 @@ class PyMathicsDocumentation(Documentation):
                 and var.__module__[: len(self.pymathicsmodule.__name__)]
                 == self.pymathicsmodule.__name__
             ):  # nopep8
+                if not check_requires_list(var):
+                    continue
                 instance = var(expression=False)
                 if isinstance(instance, Builtin):
                     self.symbols[instance.get_name()] = instance
