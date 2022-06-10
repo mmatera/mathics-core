@@ -674,8 +674,6 @@ class Documentation(object):
     def get_tests(self):
         for part in self.parts:
             for chapter in part.chapters:
-                if not chapter.installed:
-                    continue
                 tests = chapter.doc.get_tests()
                 if tests:
                     yield Tests(part.title, chapter.title, "", tests)
