@@ -15,6 +15,7 @@ from mathics_scanner import TranslateError
 
 from mathics import settings
 
+from mathics.core.atoms import from_python, String
 from mathics.core.element import KeyComparable, ensure_context
 from mathics.core.interrupt import (
     AbortInterrupt,
@@ -435,8 +436,6 @@ class Evaluation(object):
 
     def message(self, symbol, tag, *args) -> None:
         from mathics.core.expression import Expression
-        from mathics.core.atoms import String, from_python
-        from mathics.core.symbols import Symbol
 
         # Allow evaluation.message('MyBuiltin', ...) (assume
         # System`MyBuiltin)
