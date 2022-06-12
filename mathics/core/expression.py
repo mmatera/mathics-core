@@ -51,6 +51,10 @@ from mathics.core.systemsymbols import (
     SymbolBlank,
     SymbolSequence,
 )
+from mathics.core.interrupt import (
+    TimeoutInterrupt,
+)
+
 from mathics.core.atoms import String
 
 # from mathics.core.util import timeit
@@ -440,7 +444,7 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
         Evaluation is a recusive:``rewrite_apply_eval_step()`` may call us.
         """
         if evaluation.timeout:
-            return
+            raise TimeoutInterrupt
 
         expr = self
         reevaluate = True

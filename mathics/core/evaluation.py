@@ -7,6 +7,7 @@ import time
 import os
 import sys
 from threading import Thread, stack_size as set_thread_stack_size
+from datetime import datetime, timedelta
 
 from typing import Tuple
 
@@ -92,53 +93,6 @@ def set_python_recursion_limit(n) -> None:
     sys.setrecursionlimit(python_depth)
     if sys.getrecursionlimit() != python_depth:
         raise OverflowError
-
-
-def run_with_timeout_and_stack(request, timeout, evaluation):
-    """
-    interrupts evaluation after a given time period. Provides a suitable stack environment.
-    """
-
-    # only use set_thread_stack_size if max recursion depth was changed via the environment variable
-    # MATHICS_MAX_RECURSION_DEPTH. if it is set, we always use a thread, even if timeout is None, in
-    # order to be able to set the thread stack size.
-
-    if MAX_RECURSION_DEPTH > settings.DEFAULT_MAX_RECURSION_DEPTH:
-        set_thread_stack_size(python_stack_size(MAX_RECURSION_DEPTH))
-    elif timeout is None:
-        return request()
-
-    queue = Queue(maxsize=1)  # stores the result or exception
-    thread = Thread(target=_thread_target, args=(request, queue))
-    thread.start()
-
-    # Thead join(timeout) can leave zombie threads (we are the parent)
-    # when a time out occurs, but the thread hasn't terminated.  See
-    # https://docs.python.org/3/library/multiprocessing.shared_memory.html
-    # for a detailed discussion of this.
-    #
-    # To reduce this problem, we make use of specific properties of
-    # the Mathics evaluator: if we set "evaluation.timeout", the
-    # next call to "Expression.evaluate" in the thread will finish it
-    # immediately.
-    #
-    # However this still will not terminate long-running processes
-    # in Sympy or or libraries called by Mathics that might hang or run
-    # for a long time.
-    thread.join(timeout)
-    if thread.is_alive():
-        evaluation.timeout = True
-        while thread.is_alive():
-            pass
-        evaluation.timeout = False
-        evaluation.stopped = False
-        raise TimeoutInterrupt()
-
-    success, result = queue.get()
-    if success:
-        return result
-    else:
-        raise result[0].with_traceback(result[1], result[2])
 
 
 class Out(KeyComparable):
@@ -233,7 +187,6 @@ class Evaluation(object):
             definitions = Definitions()
         self.definitions = definitions
         self.recursion_depth = 0
-        self.timeout = False
         self.timeout_queue = []
         self.stopped = False
         self.out = []
@@ -298,7 +251,6 @@ class Evaluation(object):
 
         self.start_time = time.time()
         self.recursion_depth = 0
-        self.timeout = False
         self.stopped = False
         self.exc_result = self.SymbolNull
         self.last_eval = None
@@ -308,7 +260,6 @@ class Evaluation(object):
         line_no = self.definitions.get_line_no()
         line_no += 1
         self.definitions.set_line_no(line_no)
-
         history_length = self.definitions.get_history_length()
 
         result = None
@@ -349,9 +300,11 @@ class Evaluation(object):
                 self.exec_result = self.SymbolNull
                 return None
 
+        if timeout:
+            self.timeout_queue.append((timeout, datetime.now().timestamp()))
         try:
             try:
-                result = run_with_timeout_and_stack(evaluate, timeout, self)
+                result = evaluate()
             except KeyboardInterrupt:
                 if self.catch_interrupt:
                     self.exc_result = SymbolAborted
@@ -387,7 +340,6 @@ class Evaluation(object):
                 self.exc_result = Expression(SymbolHold, Expression(SymbolContinue))
             except TimeoutInterrupt:
                 self.stopped = False
-                self.timeout = True
                 self.message("General", "timeout")
                 self.exc_result = SymbolAborted
             except AbortInterrupt:  # , error:
@@ -405,6 +357,8 @@ class Evaluation(object):
         finally:
             self.stop()
 
+        if timeout:
+            self.timeout_queue.pop()
         history_length = self.definitions.get_history_length()
 
         line = line_no - history_length
@@ -572,6 +526,24 @@ class Evaluation(object):
     def check_stopped(self) -> None:
         if self.stopped:
             raise TimeoutInterrupt
+
+    @property
+    def timeout(self) -> bool:
+        curr_time = datetime.now().timestamp()
+        timeout_levels = len(self.timeout_queue)
+        for i in range(timeout_levels):
+            entry = self.timeout_queue[-i - 1]
+            if entry == True:
+                return True
+            t, start = entry
+            if curr_time - start > t:
+                self.timeout_queue[-i - 1] = True
+                return True
+        return False
+
+    @timeout.setter
+    def timeout(self, value: bool):
+        raise ValueError("you cannot set timeout")
 
     def inc_recursion_depth(self) -> None:
         self.check_stopped()

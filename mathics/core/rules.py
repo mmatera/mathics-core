@@ -2,6 +2,7 @@
 # cython: language_level=3
 # -*- coding: utf-8 -*-
 
+from mathics.core.interrupt import TimeoutInterrupt
 from mathics.core.element import KeyComparable
 from mathics.core.expression import Expression
 from mathics.core.symbols import strip_context
@@ -208,6 +209,7 @@ class BuiltinRule(BaseRule):
         vars_noctx = dict(((strip_context(s), vars[s]) for s in vars))
         if self.pass_expression:
             vars_noctx["expression"] = expression
+
         if options:
             return self.function(evaluation=evaluation, options=options, **vars_noctx)
         else:
