@@ -1096,7 +1096,7 @@ class Now(Predefined):
         return Expression(SymbolDateObject.evaluate(evaluation))
 
 
-if sys.platform != "win32":
+if True:  # sys.platform != "win32":
 
     class TimeConstrained(Builtin):
         r"""
