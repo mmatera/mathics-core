@@ -1096,70 +1096,68 @@ class Now(Predefined):
         return Expression(SymbolDateObject.evaluate(evaluation))
 
 
-if True:  # sys.platform != "win32" and not hasattr(sys, "pyston_version_info"):
+class TimeConstrained(Builtin):
+    r"""
+    <dl>
+      <dt>'TimeConstrained[$expr$, $t$]'
+      <dd>'evaluates $expr$, stopping after $t$ seconds.'
 
-    class TimeConstrained(Builtin):
-        r"""
-        <dl>
-          <dt>'TimeConstrained[$expr$, $t$]'
-          <dd>'evaluates $expr$, stopping after $t$ seconds.'
+      <dt>'TimeConstrained[$expr$, $t$, $failexpr$]'
+      <dd>'returns $failexpr$ if the time constraint is not met.'
+    </dl>
 
-          <dt>'TimeConstrained[$expr$, $t$, $failexpr$]'
-          <dd>'returns $failexpr$ if the time constraint is not met.'
-        </dl>
+    Possible issues: for certain time-consuming functions (like simplify)
+    which are based on sympy or other libraries, it is possible that
+    the evaluation continues after the timeout. However, at the end of the evaluation, the function will return '$Aborted' and the results will not affect
+    the state of the \Mathics kernel.
 
-        Possible issues: for certain time-consuming functions (like simplify)
-        which are based on sympy or other libraries, it is possible that
-        the evaluation continues after the timeout. However, at the end of the evaluation, the function will return '$Aborted' and the results will not affect
-        the state of the \Mathics kernel.
+    >> TimeConstrained[Pause[1]; x^2 , .1]
+     = $Aborted
 
-        >> TimeConstrained[Pause[1]; x^2 , .1]
-         = $Aborted
+    >> TimeConstrained[Pause[1]; x^2, .1, sqx]
+     = sqx
 
-        >> TimeConstrained[Pause[1]; x^2, .1, sqx]
-         = sqx
+    >> s = TimeConstrained[Integrate[Sin[x] ^ 3, x], a]
+     : Number of seconds a is not a positive machine-sized number or Infinity.
+     = TimeConstrained[Integrate[Sin[x] ^ 3, x], a]
 
-        >> s = TimeConstrained[Integrate[Sin[x] ^ 3, x], a]
-         : Number of seconds a is not a positive machine-sized number or Infinity.
-         = TimeConstrained[Integrate[Sin[x] ^ 3, x], a]
+    >> a=10.; s
+     = Cos[x] (-3 + Cos[x] ^ 2) / 3
+    """
 
-        >> a=10.; s
-         = Cos[x] (-3 + Cos[x] ^ 2) / 3
-        """
+    attributes = hold_all | protected
+    messages = {
+        "timc": "Number of seconds `1` is not a positive machine-sized number or Infinity.",
+    }
 
-        attributes = hold_all | protected
-        messages = {
-            "timc": "Number of seconds `1` is not a positive machine-sized number or Infinity.",
-        }
+    summary_text = "run a command for at most a specified time"
 
-        summary_text = "run a command for at most a specified time"
+    def apply_2(self, expr, t, evaluation):
+        "TimeConstrained[expr_, t_]"
+        return self.apply_3(expr, t, SymbolAborted, evaluation)
 
-        def apply_2(self, expr, t, evaluation):
-            "TimeConstrained[expr_, t_]"
-            return self.apply_3(expr, t, SymbolAborted, evaluation)
-
-        def apply_3(self, expr, t, failexpr, evaluation):
-            "TimeConstrained[expr_, t_, failexpr_]"
-            t = t.evaluate(evaluation)
-            if not t.is_numeric(evaluation):
-                evaluation.message("TimeConstrained", "timc", t)
-                return
-            try:
-                t = float(t.to_python())
-                evaluation.timeout_queue.append((t, datetime.now().timestamp()))
-                res = expr.evaluate(evaluation)
-            except TimeoutInterrupt:
-                last = evaluation.timeout_queue.pop()
-                if last == True:
-                    return failexpr.evaluate(evaluation)
-                # The timeout was not set here. Reraise the
-                # TimeoutInterrupt exception.
-                raise TimeoutInterrupt
-            except Exception as e:
-                evaluation.timeout_queue.pop()
-                raise
+    def apply_3(self, expr, t, failexpr, evaluation):
+        "TimeConstrained[expr_, t_, failexpr_]"
+        t = t.evaluate(evaluation)
+        if not t.is_numeric(evaluation):
+            evaluation.message("TimeConstrained", "timc", t)
+            return
+        try:
+            t = float(t.to_python())
+            evaluation.timeout_queue.append((t, datetime.now().timestamp()))
+            res = expr.evaluate(evaluation)
+        except TimeoutInterrupt:
+            last = evaluation.timeout_queue.pop()
+            if last == True:
+                return failexpr.evaluate(evaluation)
+            # The timeout was not set here. Reraise the
+            # TimeoutInterrupt exception.
+            raise TimeoutInterrupt
+        except Exception as e:
             evaluation.timeout_queue.pop()
-            return res
+            raise
+        evaluation.timeout_queue.pop()
+        return res
 
 
 class TimeZone(Predefined):
