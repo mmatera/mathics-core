@@ -195,6 +195,7 @@ class CompoundExpression(BinaryOperator):
 
         for expr in items:
             prev_result = result
+
             result = expr.evaluate(evaluation)
 
             # `expr1; expr2;` returns `Null` but assigns `expr2` to `Out[n]`.

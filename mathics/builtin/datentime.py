@@ -18,7 +18,7 @@ import dateutil.parser
 from mathics.builtin.base import Builtin, Predefined
 from mathics.core.atoms import Integer, Real, String, from_python
 from mathics.core.attributes import hold_all, no_attributes, protected, read_protected
-from mathics.core.evaluation import TimeoutInterrupt, run_with_timeout_and_stack
+from mathics.core.interrupt import TimeoutInterrupt
 from mathics.core.element import ImmutableValueMixin
 from mathics.core.expression import Expression, to_expression
 from mathics.core.list import ListExpression, to_mathics_list
@@ -1046,8 +1046,16 @@ class Pause(Builtin):
                 "Pause", "numnm", Expression(SymbolPause, from_python(n))
             )
             return
-
-        time.sleep(sleeptime)
+        if evaluation.timeout_queue:
+            while sleeptime > 0 and not evaluation.timeout:
+                # Fixme: look for a criteria to set the
+                # granularity
+                time.sleep(0.01)
+                sleeptime = sleeptime - 0.01
+            if evaluation.timeout:
+                raise TimeoutInterrupt
+        else:
+            time.sleep(sleeptime)
         return SymbolNull
 
 
@@ -1088,72 +1096,68 @@ class Now(Predefined):
         return Expression(SymbolDateObject.evaluate(evaluation))
 
 
-if sys.platform != "win32" and not hasattr(sys, "pyston_version_info"):
+class TimeConstrained(Builtin):
+    r"""
+    <dl>
+      <dt>'TimeConstrained[$expr$, $t$]'
+      <dd>'evaluates $expr$, stopping after $t$ seconds.'
 
-    class TimeConstrained(Builtin):
-        r"""
-        <dl>
-          <dt>'TimeConstrained[$expr$, $t$]'
-          <dd>'evaluates $expr$, stopping after $t$ seconds.'
+      <dt>'TimeConstrained[$expr$, $t$, $failexpr$]'
+      <dd>'returns $failexpr$ if the time constraint is not met.'
+    </dl>
 
-          <dt>'TimeConstrained[$expr$, $t$, $failexpr$]'
-          <dd>'returns $failexpr$ if the time constraint is not met.'
-        </dl>
+    Possible issues: for certain time-consuming functions (like simplify)
+    which are based on sympy or other libraries, it is possible that
+    the evaluation continues after the timeout. However, at the end of the evaluation, the function will return '$Aborted' and the results will not affect
+    the state of the \Mathics kernel.
 
-        Possible issues: for certain time-consuming functions (like simplify)
-        which are based on sympy or other libraries, it is possible that
-        the evaluation continues after the timeout. However, at the end of the evaluation, the function will return '$Aborted' and the results will not affect
-        the state of the \Mathics kernel.
+    >> TimeConstrained[Pause[1]; x^2 , .1]
+     = $Aborted
 
-        """
+    >> TimeConstrained[Pause[1]; x^2, .1, sqx]
+     = sqx
 
-        # FIXME: these tests sometimes cause SEGVs which probably means
-        # that TimeConstraint has bugs.
+    >> s = TimeConstrained[Integrate[Sin[x] ^ 3, x], a]
+     : Number of seconds a is not a positive machine-sized number or Infinity.
+     = TimeConstrained[Integrate[Sin[x] ^ 3, x], a]
 
-        # Consider testing via unit tests.
-        # >> TimeConstrained[Integrate[Sin[x]^1000000,x],1]
-        # = $Aborted
+    >> a=10.; s
+     = Cos[x] (-3 + Cos[x] ^ 2) / 3
+    """
 
-        # >> TimeConstrained[Integrate[Sin[x]^1000000,x], 1, Integrate[Cos[x],x]]
-        # = Sin[x]
+    attributes = hold_all | protected
+    messages = {
+        "timc": "Number of seconds `1` is not a positive machine-sized number or Infinity.",
+    }
 
-        # >> s=TimeConstrained[Integrate[Sin[x] ^ 3, x], a]
-        #  : Number of seconds a is not a positive machine-sized number or Infinity.
-        #  = TimeConstrained[Integrate[Sin[x] ^ 3, x], a]
+    summary_text = "run a command for at most a specified time"
 
-        # >> a=1; s
-        # =  Cos[x] (-5 + Cos[2 x]) / 6
+    def apply_2(self, expr, t, evaluation):
+        "TimeConstrained[expr_, t_]"
+        return self.apply_3(expr, t, SymbolAborted, evaluation)
 
-        attributes = hold_all | protected
-        messages = {
-            "timc": "Number of seconds `1` is not a positive machine-sized number or Infinity.",
-        }
-
-        summary_text = "run a command for at most a specified time"
-
-        def apply_2(self, expr, t, evaluation):
-            "TimeConstrained[expr_, t_]"
-            return self.apply_3(expr, t, SymbolAborted, evaluation)
-
-        def apply_3(self, expr, t, failexpr, evaluation):
-            "TimeConstrained[expr_, t_, failexpr_]"
-            t = t.evaluate(evaluation)
-            if not t.is_numeric(evaluation):
-                evaluation.message("TimeConstrained", "timc", t)
-                return
-            try:
-                t = float(t.to_python())
-                evaluation.timeout_queue.append((t, datetime.now().timestamp()))
-                request = lambda: expr.evaluate(evaluation)
-                res = run_with_timeout_and_stack(request, t, evaluation)
-            except TimeoutInterrupt:
-                evaluation.timeout_queue.pop()
+    def apply_3(self, expr, t, failexpr, evaluation):
+        "TimeConstrained[expr_, t_, failexpr_]"
+        t = t.evaluate(evaluation)
+        if not t.is_numeric(evaluation):
+            evaluation.message("TimeConstrained", "timc", t)
+            return
+        try:
+            t = float(t.to_python())
+            evaluation.timeout_queue.append((t, datetime.now().timestamp()))
+            res = expr.evaluate(evaluation)
+        except TimeoutInterrupt:
+            last = evaluation.timeout_queue.pop()
+            if last == True:
                 return failexpr.evaluate(evaluation)
-            except:
-                evaluation.timeout_queue.pop()
-                raise
+            # The timeout was not set here. Reraise the
+            # TimeoutInterrupt exception.
+            raise TimeoutInterrupt
+        except Exception as e:
             evaluation.timeout_queue.pop()
-            return res
+            raise
+        evaluation.timeout_queue.pop()
+        return res
 
 
 class TimeZone(Predefined):

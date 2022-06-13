@@ -16,7 +16,12 @@ from mathics.algorithm.series import (
     series_times_series,
     series_derivative,
 )
-from mathics.builtin.base import Builtin, PostfixOperator, SympyFunction
+from mathics.builtin.base import (
+    Builtin,
+    PostfixOperator,
+    SympyFunction,
+    call_with_timeout,
+)
 from mathics.builtin.scoping import dynamic_scoping
 
 from mathics.core.atoms import (
@@ -42,6 +47,7 @@ from mathics.core.attributes import (
 from mathics.core.convert import sympy_symbol_prefix, SympyExpression, from_sympy
 from mathics.core.evaluation import Evaluation
 from mathics.core.evaluators import apply_N
+from mathics.core.interrupt import TimeoutInterrupt
 
 from mathics.core.expression import Expression, to_expression
 from mathics.core.list import ListExpression, to_mathics_list
@@ -496,6 +502,10 @@ class Derivative(PostfixOperator, SympyFunction):
             return
 
 
+def call_sympy_integrate(queue, f_sympy, *vars):
+    queue.put(sympy.integrate(f_sympy, *vars))
+
+
 class Integrate(SympyFunction):
     r"""
     <dl>
@@ -669,8 +679,15 @@ class Integrate(SympyFunction):
             else:
                 vars.append((x, a, b))
         try:
-            sympy_result = sympy.integrate(f_sympy, *vars)
+            if evaluation.timeout_queue:
+                sympy_result = call_with_timeout(
+                    evaluation, call_sympy_integrate, f_sympy, *vars
+                )
+            else:
+                sympy_result = sympy.integrate(f_sympy, *vars)
             pass
+        except TimeoutInterrupt:
+            raise
         except sympy.PolynomialError:
             return
         except ValueError:

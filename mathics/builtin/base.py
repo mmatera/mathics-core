@@ -9,6 +9,7 @@ from itertools import chain
 import typing
 from typing import Any, Iterable, cast
 
+from datetime import datetime, timedelta
 
 from mathics.builtin.exceptions import (
     BoxConstructError,
@@ -17,6 +18,7 @@ from mathics.builtin.exceptions import (
 from mathics.core.attributes import no_attributes
 from mathics.core.convert import from_sympy
 from mathics.core.definitions import Definition
+from mathics.core.interrupt import TimeoutInterrupt
 from mathics.core.list import ListExpression
 from mathics.core.parser.util import SystemDefinitions, PyMathicsDefinitions
 from mathics.core.rules import Rule, BuiltinRule, Pattern
@@ -40,6 +42,9 @@ from mathics.core.symbols import (
 )
 from mathics.core.systemsymbols import SymbolHoldForm, SymbolMessageName, SymbolRule
 from mathics.core.attributes import protected, read_protected
+
+
+from multiprocessing import Process, Queue
 
 
 def get_option(options, name, evaluation, pop=False, evaluate=True):
@@ -658,6 +663,27 @@ class Test(Builtin):
             return
 
 
+def call_sympy_function(queue, sympy_fn, *sympy_args):
+    queue.put(from_sympy(sympy_fn(*sympy_args)))
+
+
+def call_with_timeout(evaluation, external_function, *args):
+    t, start_time = evaluation.timeout_queue[-1]
+    curr_time = datetime.now().timestamp()
+    remaining = t + start_time - curr_time
+    if remaining < 0:
+        raise TimeoutInterrupt
+    queue = Queue()
+    process = Process(target=external_function, args=(queue, *args))
+    process.start()
+    process.join(remaining)
+    if process.is_alive():
+        process.terminate()
+        evaluation.timeout
+        raise TimeoutInterrupt
+    return queue.get()
+
+
 class SympyFunction(SympyObject):
     def apply(self, z, evaluation):
         #
@@ -669,7 +695,14 @@ class SympyFunction(SympyObject):
         args = z.numerify(evaluation).get_sequence()
         sympy_args = [a.to_sympy() for a in args]
         sympy_fn = getattr(sympy, self.sympy_name)
-        return from_sympy(sympy_fn(*sympy_args))
+
+        if evaluation.timeout_queue:
+            result = call_with_timeout(
+                evaluation, call_sympy_function, sympy_fn, *sympy_args
+            )
+        else:
+            result = from_sympy(sympy_fn(*sympy_args))
+        return result
 
     def get_constant(self, precision, evaluation, have_mpmath=False):
         try:
