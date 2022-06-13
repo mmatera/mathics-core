@@ -45,14 +45,6 @@ from mathics.core.attributes import protected, read_protected
 # This global dict stores which libraries was required to
 # be available, and the corresponding result.
 requires_lib_cache = {}
-# Use the following line instead {} in order to simulate that all these
-# libraries are not available.
-# requires_lib_cache = {
-#     "PIL": False,
-#    "skimage": False,
-#    "scipy": False,
-#    "ipywidgets": False,
-# }
 
 
 def check_requires_list(requires: list) -> bool:
