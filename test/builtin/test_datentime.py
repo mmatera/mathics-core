@@ -8,10 +8,10 @@ import sys
 import time
 
 
-@pytest.mark.skipif(
-    sys.platform in ("win32",),
-    reason="pyston and win32 does not do well killing threads",
-)
+# @pytest.mark.skipif(
+#    sys.platform in ("win32",),
+#    reason="pyston and win32 does not do well killing threads",
+# )
 def test_timeconstrained_assignment_1():
     # This test
     str_expr1 = "a=1.; TimeConstrained[Do[Pause[.1];a=a+1,{1000}],1]"
@@ -26,10 +26,10 @@ def test_timeconstrained_assignment_1():
     assert evaluate("a").to_python() <= 10
 
 
-@pytest.mark.skipif(
-    sys.platform in ("win32",),
-    reason="pyston and win32 does not do well killing threads",
-)
+# @pytest.mark.skipif(
+#    sys.platform in ("win32",),
+#    reason="pyston and win32 does not do well killing threads",
+# )
 def test_timeconstrained_assignment_2():
     # This test checks if the assignment is really aborted
     # if the RHS exceeds the wall time.
@@ -42,10 +42,10 @@ def test_timeconstrained_assignment_2():
     assert evaluate("a").to_python() == 1.0
 
 
-@pytest.mark.skipif(
-    sys.platform in ("win32",),
-    reason="pyston and win32 does not do well killing threads",
-)
+# @pytest.mark.skipif(
+#    sys.platform in ("win32",),
+#    reason="pyston and win32 does not do well killing threads",
+# )
 def test_timeconstrained_sympy():
     # This test tries to run a large and onerous calculus that runs
     # in sympy (outside the control of Mathics).
@@ -58,10 +58,10 @@ def test_timeconstrained_sympy():
     assert result is None or result == Symbol("$Aborted")
 
 
-@pytest.mark.skipif(
-    sys.platform in ("win32",),
-    reason="pyston and win32 does not do well killing threads",
-)
+# @pytest.mark.skipif(
+#    sys.platform in ("win32",),
+#    reason="pyston and win32 does not do well killing threads",
+# )
 def test_timeremaining():
     str_expr = "TimeConstrained[1+2; TimeRemaining[], 0.9]"
     result = evaluate(str_expr)
