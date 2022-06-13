@@ -1123,7 +1123,7 @@ if True:  # sys.platform != "win32" and not hasattr(sys, "pyston_version_info"):
          : Number of seconds a is not a positive machine-sized number or Infinity.
          = TimeConstrained[Integrate[Sin[x] ^ 3, x], a]
 
-        >> a=1.; s
+        >> a=10.; s
          = Cos[x] (-3 + Cos[x] ^ 2) / 3
         """
 
