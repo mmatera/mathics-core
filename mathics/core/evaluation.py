@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 
-from queue import Queue
 import time
 
 
 import os
 import sys
-from threading import Thread, stack_size as set_thread_stack_size
+
+# maybe better use process
+from threading import stack_size as set_thread_stack_size
+from multiprocessing import Process, Queue, set_start_method as mp_set_start_method
+
+mp_set_start_method("fork")
+
 
 from typing import Tuple
 
@@ -57,15 +62,6 @@ SymbolPrePrint = Symbol("System`$PrePrint")
 SymbolPost = Symbol("System`$Post")
 
 
-def _thread_target(request, queue) -> None:
-    try:
-        result = request()
-        queue.put((True, result))
-    except BaseException:
-        exc_info = sys.exc_info()
-        queue.put((False, exc_info))
-
-
 # MAX_RECURSION_DEPTH gives the maximum value allowed for $RecursionLimit. it's usually set to its
 # default settings.DEFAULT_MAX_RECURSION_DEPTH.
 
@@ -95,6 +91,15 @@ def set_python_recursion_limit(n) -> None:
         raise OverflowError
 
 
+def _process_target(request, queue) -> None:
+    try:
+        result = request()
+        queue.put((True, result))
+    except BaseException:
+        exc_info = sys.exc_info()
+        queue.put((False, exc_info))
+
+
 def run_with_timeout_and_stack(request, timeout, evaluation):
     """
     interrupts evaluation after a given time period. Provides a suitable stack environment.
@@ -104,35 +109,21 @@ def run_with_timeout_and_stack(request, timeout, evaluation):
     # MATHICS_MAX_RECURSION_DEPTH. if it is set, we always use a thread, even if timeout is None, in
     # order to be able to set the thread stack size.
 
-    if MAX_RECURSION_DEPTH > settings.DEFAULT_MAX_RECURSION_DEPTH:
-        set_thread_stack_size(python_stack_size(MAX_RECURSION_DEPTH))
-    elif timeout is None:
+    # if MAX_RECURSION_DEPTH > settings.DEFAULT_MAX_RECURSION_DEPTH:
+    #    set_thread_stack_size(python_stack_size(MAX_RECURSION_DEPTH))
+    # elif timeout is None:
+    if timeout is None:
         return request()
 
     queue = Queue(maxsize=1)  # stores the result or exception
-    thread = Thread(target=_thread_target, args=(request, queue))
-    thread.start()
-
-    # Thead join(timeout) can leave zombie threads (we are the parent)
-    # when a time out occurs, but the thread hasn't terminated.  See
-    # https://docs.python.org/3/library/multiprocessing.shared_memory.html
-    # for a detailed discussion of this.
-    #
-    # To reduce this problem, we make use of specific properties of
-    # the Mathics evaluator: if we set "evaluation.timeout", the
-    # next call to "Expression.evaluate" in the thread will finish it
-    # immediately.
-    #
-    # However this still will not terminate long-running processes
-    # in Sympy or or libraries called by Mathics that might hang or run
-    # for a long time.
-    thread.join(timeout)
-    if thread.is_alive():
+    process = Process(target=_process_target, args=(request, queue))
+    process.start()
+    process.join(timeout)
+    if process.is_alive():
         evaluation.timeout = True
-        while thread.is_alive():
-            pass
-        evaluation.timeout = False
+        process.terminate()
         evaluation.stopped = False
+        evaluation.timeout = False
         raise TimeoutInterrupt()
 
     success, result = queue.get()
