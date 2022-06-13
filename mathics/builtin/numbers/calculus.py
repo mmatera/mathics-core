@@ -2127,6 +2127,8 @@ class NIntegrate(Builtin):
             method = method.value
         elif isinstance(method, Symbol):
             method = method.get_name()
+            # strip context
+            method = method[method.rindex("`") + 1 :]
         else:
             evaluation.message("NIntegrate", "bdmtd", method)
             return
@@ -2160,7 +2162,6 @@ class NIntegrate(Builtin):
 
         intvars = ListExpression(*coords)
         integrand = Expression(SymbolCompile, intvars, func).evaluate(evaluation)
-
         if len(integrand.elements) >= 3:
             integrand = integrand.elements[2].cfunc
         else:
