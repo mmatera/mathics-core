@@ -45,6 +45,9 @@ from mathics.core.attributes import protected, read_protected
 # This global dict stores which libraries was required to
 # be available, and the corresponding result.
 requires_lib_cache = {}
+# Use the following line instead {} in order to simulate that all these
+# libraries are not available.
+# requires_lib_cache = {'PIL': False, 'skimage': False, 'scipy': False, 'ipywidgets': False,}
 
 
 def check_requires_list(requires: list) -> bool:
@@ -52,7 +55,6 @@ def check_requires_list(requires: list) -> bool:
     Check if module names in ``requires`` can be imported and return True if they can or False if not.
 
     This state value is also recorded in dictionary `requires_lib_cache` keyed by module name and is used to determine whether to skip trying to get information from the module."""
-    global requires_lib_cache
     for package in requires:
         lib_is_installed = requires_lib_cache.get(package, None)
         if lib_is_installed is None:
