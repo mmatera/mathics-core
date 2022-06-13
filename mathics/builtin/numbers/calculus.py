@@ -1522,7 +1522,7 @@ class FindMinimum(_BaseFinder):
     >> FindMinimum[Sin[x], {x, 1}]
      = {-1., {x -> -1.5708}}
     >> phi[x_?NumberQ]:=NIntegrate[u,{u,0,x}, Method->"Internal"];
-    >> Quiet[FindMinimum[phi[x]-x,{x,1.2}, Method->"Newton"]]
+    >> Quiet[FindMinimum[phi[x]-x,{x, 1.2}, Method->"Newton"]]
      = {-0.5, {x -> 1.00001}}
     >> Clear[phi];
     For a not so well behaving function, the result can be less accurate:
@@ -1568,8 +1568,8 @@ class FindMaximum(_BaseFinder):
      = {2., {x -> 3.}}
     >> FindMaximum[Sin[x], {x, 1}]
      = {1., {x -> 1.5708}}
-    >> phi[x_?NumberQ]:=NIntegrate[u,{u,1.e-6,x}, Method->"Internal"];
-    >> Quiet[FindMaximum[-phi[x] + x,{x, 1.2}, Method->"Newton"]]
+    >> phi[x_?NumberQ]:=NIntegrate[u, {u, 0., x}, Method->"Internal"];
+    >> Quiet[FindMaximum[-phi[x] + x, {x, 1.2}, Method->"Newton"]]
      = {0.5, {x -> 1.00001}}
     >> Clear[phi];
     For a not so well behaving function, the result can be less accurate:
