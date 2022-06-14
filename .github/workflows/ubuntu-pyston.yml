@@ -27,7 +27,7 @@ jobs:
         sudo LLVM_CONFIG=/usr/lib/llvm-11/bin/llvm-config  pyston -m pip install llvmlite
     - name: Install Mathics with minimal dependencies
       run: |
-        make develop
+        make develop-full
     - name: Test Mathics
       run: |
         # py.test seems to use always the default python interpreter of the system. Any idea about how to
