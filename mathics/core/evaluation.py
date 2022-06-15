@@ -66,6 +66,38 @@ def _thread_target(request, queue) -> None:
         queue.put((False, exc_info))
 
 
+def kill_thread(thread) -> bool:
+    """
+    Tries to kill a thread.
+    If successful, returns True; otherwise, False.
+    """
+    # See https://www.geeksforgeeks.org/python-different-ways-to-kill-a-thread/
+
+    from ctypes import pythonapi, py_object, c_long
+
+    thread_id = None
+    # First, look for the thread id
+    if hasattr(thread, "_thread_id"):
+        thread_id = thread._thread_id
+    else:
+        import threading
+
+        for id, thr in threading._active.items():
+            if thr is thread:
+                thread_id = id
+    if thread_id is None:
+        # The thread does not exists anymore. Our work has been done.
+        return True
+
+    result = pythonapi.PyThreadState_SetAsyncExc(
+        c_long(thread_id), py_object(SystemExit)
+    )
+    if result == 1:
+        return True
+    pythonapi.PyThreadState_SetAsyncExc(c_long(thread_id), None)
+    return False
+
+
 # MAX_RECURSION_DEPTH gives the maximum value allowed for $RecursionLimit. it's usually set to its
 # default settings.DEFAULT_MAX_RECURSION_DEPTH.
 
@@ -129,10 +161,10 @@ def run_with_timeout_and_stack(request, timeout, evaluation):
     thread.join(timeout)
     if thread.is_alive():
         evaluation.timeout = True
-        while thread.is_alive():
-            pass
-        evaluation.timeout = False
+        if not kill_thread(thread):
+            evaluation.message("General", "warn", "thread couldn't be stopped.")
         evaluation.stopped = False
+        evaluation.timeout = False
         raise TimeoutInterrupt()
 
     success, result = queue.get()
