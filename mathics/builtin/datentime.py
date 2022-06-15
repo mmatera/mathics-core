@@ -1128,7 +1128,7 @@ if True:  # sys.platform != "win32":
          : Number of seconds a is not a positive machine-sized number or Infinity.
          = TimeConstrained[Integrate[Sin[x] ^ 3, x], a]
 
-        >> a=.5; s
+        >> a=1.; s
          = Cos[x] (-3 + Cos[x] ^ 2) / 3
         """
 
