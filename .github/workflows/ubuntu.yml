@@ -10,14 +10,14 @@ jobs:
   build:
     env:
       NO_CYTHON: 1
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9, pypy3.7]
+        python-version: [3.6, 3.7, 3.8, 3.9, pypy3]
     steps:
     - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
