@@ -31,6 +31,7 @@ from mathics.core.atoms import (
     MachineReal,
     PrecisionReal,
     String,
+    from_python,
 )
 from mathics.core.expression import Expression, SymbolDefault, to_expression
 from mathics.core.number import get_precision, PrecisionValueError
