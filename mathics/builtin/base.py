@@ -461,6 +461,7 @@ class Builtin:
         """
 
         def apply_unavailable(**kwargs):  # will override apply method
+            package = from_python(self.requires)
             kwargs["evaluation"].message(
                 "General",
                 "pyimport",  # see inout.py

@@ -837,10 +837,10 @@ class MathicsMainDocumentation(Documentation):
                         # user manual
                         if submodule.__doc__ is None:
                             continue
-                        elif IS_PYPY and submodule.__name__ == "builtins":
-                            # PyPy seems to add this module on its own,
-                            # but it is not something htat can be importable
-                            continue
+                        # elif IS_PYPY and submodule.__name__ == "builtins":
+                        #    # PyPy seems to add this module on its own,
+                        #    # but it is not something htat can be importable
+                        #    continue
 
                         if submodule in modules_seen:
                             continue
@@ -856,6 +856,7 @@ class MathicsMainDocumentation(Documentation):
                         modules_seen.add(submodule)
                         guide_section.subsections.append(section)
 
+                        builtins = builtins_by_module[submodule.__name__]
                         subsections = [
                             builtin
                             for builtin in builtins
