@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__doc__ = """
+"""
 Image[] and image related functions
 
 Note that you (currently) need scikit-image installed in order for this module to work.
@@ -15,18 +15,6 @@ from typing import Optional, Tuple
 
 from mathics.builtin.base import Builtin, AtomBuiltin, Test, String
 from mathics.builtin.box.image import ImageBox
-from mathics.core.atoms import (
-    Atom,
-    Integer,
-    Integer0,
-    Integer1,
-    MachineReal,
-    Rational,
-    Real,
-    SymbolDivide,
-    from_python,
-)
-from mathics.core.expression import Expression
 from mathics.builtin.colors.color_internals import (
     convert_color,
     colorspaces as known_colorspaces,
@@ -41,13 +29,30 @@ from mathics.builtin.drawing.image_internals import (
     numpy_flip,
     convolve,
 )
+
+from mathics.core.atoms import (
+    Atom,
+    Integer,
+    Integer0,
+    Integer1,
+    MachineReal,
+    Rational,
+    Real,
+    SymbolDivide,
+    from_python,
+)
+from mathics.core.expression import Expression
 from mathics.core.list import to_mathics_list, ListExpression
 from mathics.core.symbols import Symbol, SymbolNull, SymbolTrue
 from mathics.core.systemsymbols import SymbolRule, SymbolSimplify
 
+SymbolColorQuantize = Symbol("ColorQuantize")
+SymbolImage = Symbol("Image")
+SymbolMatrixQ = Symbol("MatrixQ")
+SymbolThreshold = Symbol("Threshold")
 
+# Note a list of packages that are needed for image Builtins.
 _image_requires = ("numpy", "PIL")
-
 _skimage_requires = _image_requires + ("skimage", "scipy", "matplotlib", "networkx")
 
 try:
@@ -67,20 +72,32 @@ except ImportError:
 
 from io import BytesIO
 
+# The following classes are used to allow inclusion of
+# Buultin Functions only when certain Python packages
+# are available. They do this by setting the `requires` class variable.
+
 
 class _ImageBuiltin(Builtin):
     requires = _image_requires
 
 
 class _ImageTest(Test):
+    """
+    Testing Image Builtins -- those function names ending with "Q" -- that require scikit-image.
+    """
+
     requires = _image_requires
 
 
 class _SkimageBuiltin(_ImageBuiltin):
+    """
+    Image Builtins that require scikit-image.
+    """
+
     requires = _skimage_requires
 
 
-# import and export
+# Code related to Mathics Functions that import and export.
 
 
 class _Exif:
@@ -126,8 +143,8 @@ class _Exif:
 class ImageImport(_ImageBuiltin):
     """
     <dl>
-    <dt> 'ImageImport["path"]'
-    <dd> import an image from the file "path".
+      <dt> 'ImageImport["path"]'
+      <dd> import an image from the file "path".
     </dl>
 
     ## Image
@@ -166,13 +183,13 @@ class ImageImport(_ImageBuiltin):
 class ImageExport(_ImageBuiltin):
     """
     <dl>
-    <dt> 'ImageExport["path", $image$]'
-    <dd> export $image$ as file in "path".
+      <dt> 'ImageExport["path", $image$]'
+      <dd> export $image$ as file in "path".
     </dl>
     """
 
-    summary_text = "export an image to a file"
     messages = {"noimage": "only an Image[] can be exported into an image file"}
+    summary_text = "export an image to a file"
 
     def apply(self, path, expr, opts, evaluation):
         """ImageExport[path_String, expr_, opts___]"""
@@ -231,7 +248,7 @@ class _ImageArithmetic(_ImageBuiltin):
 class ImageAdd(_ImageArithmetic):
     """
     <dl>
-    <dt>'ImageAdd[$image$, $expr_1$, $expr_2$, ...]'
+      <dt>'ImageAdd[$image$, $expr_1$, $expr_2$, ...]'
       <dd>adds all $expr_i$ to $image$ where each $expr_i$ must be an image or a real number.
     </dl>
 
@@ -267,7 +284,7 @@ class ImageAdd(_ImageArithmetic):
 class ImageSubtract(_ImageArithmetic):
     """
     <dl>
-    <dt>'ImageSubtract[$image$, $expr_1$, $expr_2$, ...]'
+      <dt>'ImageSubtract[$image$, $expr_1$, $expr_2$, ...]'
       <dd>subtracts all $expr_i$ from $image$ where each $expr_i$ must be an image or a real number.
     </dl>
 
@@ -293,7 +310,7 @@ class ImageSubtract(_ImageArithmetic):
 class ImageMultiply(_ImageArithmetic):
     """
     <dl>
-    <dt>'ImageMultiply[$image$, $expr_1$, $expr_2$, ...]'
+      <dt>'ImageMultiply[$image$, $expr_1$, $expr_2$, ...]'
       <dd>multiplies all $expr_i$ with $image$ where each $expr_i$ must be an image or a real number.
     </dl>
 
@@ -312,9 +329,9 @@ class ImageMultiply(_ImageArithmetic):
      : Expecting a number, image, or graphics instead of x.
      = ImageMultiply[-Image-, x]
 
-    >> ein = Import["ExampleData/Einstein.jpg"];
-    >> noise = RandomImage[{0.7, 1.3}, ImageDimensions[ein]];
-    >> ImageMultiply[noise, ein]
+    S> ein = Import["ExampleData/Einstein.jpg"];
+    S> noise = RandomImage[{0.7, 1.3}, ImageDimensions[ein]];
+    S> ImageMultiply[noise, ein]
      = -Image-
     """
 
@@ -348,20 +365,19 @@ class RandomImage(_ImageBuiltin):
      = -Image-
     """
 
-    summary_text = "build an image with random pixels"
     options = {"ColorSpace": "Automatic"}
 
+    messages = {
+        "bddim": "The specified dimension `1` should be a pair of positive integers.",
+        "imgcstype": "`1` is an invalid color space specification.",
+    }
     rules = {
         "RandomImage[]": "RandomImage[{0, 1}, {150, 150}]",
         "RandomImage[max_?RealNumberQ]": "RandomImage[{0, max}, {150, 150}]",
         "RandomImage[{minval_?RealNumberQ, maxval_?RealNumberQ}]": "RandomImage[{minval, maxval}, {150, 150}]",
         "RandomImage[max_?RealNumberQ, {w_Integer, h_Integer}]": "RandomImage[{0, max}, {w, h}]",
     }
-
-    messages = {
-        "bddim": "The specified dimension `1` should be a pair of positive integers.",
-        "imgcstype": "`1` is an invalid color space specification.",
-    }
+    summary_text = "build an image with random pixels"
 
     def apply(self, minval, maxval, w, h, evaluation, options):
         "RandomImage[{minval_?RealNumberQ, maxval_?RealNumberQ}, {w_Integer, h_Integer}, OptionsPattern[RandomImage]]"
@@ -398,58 +414,46 @@ class RandomImage(_ImageBuiltin):
 class ImageResize(_ImageBuiltin):
     """
     <dl>
-    <dt>'ImageResize[$image$, $width$]'
+      <dt>'ImageResize[$image$, $width$]'
       <dd>
-    <dt>'ImageResize[$image$, {$width$, $height$}]'
+
+      <dt>'ImageResize[$image$, {$width$, $height$}]'
       <dd>
     </dl>
 
-    >> ein = Import["ExampleData/Einstein.jpg"];
-    >> ImageDimensions[ein]
-     = {615, 768}
-    >> ImageResize[ein, {400, 600}]
+    S> ein = Import["ExampleData/Einstein.jpg"]
      = -Image-
-    #> ImageDimensions[%]
+
+    S> ImageDimensions[ein]
+     = {615, 768}
+    S> ImageResize[ein, {400, 600}]
+     = -Image-
+    S> ImageDimensions[%]
      = {400, 600}
 
-    >> ImageResize[ein, 256]
+    S> ImageResize[ein, {256}]
      = -Image-
-    >> ImageDimensions[%]
-     = {256, 320}
 
-    The default sampling method is Bicubic
-    >> ImageResize[ein, 256, Resampling -> "Bicubic"]
-     = -Image-
-    #> ImageDimensions[%]
-     = {256, 320}
-    >> ImageResize[ein, 256, Resampling -> "Nearest"]
-     = -Image-
-    #> ImageDimensions[%]
-     = {256, 320}
-    >> ImageResize[ein, 256, Resampling -> "Gaussian"]
-     = -Image-
-    #> ImageDimensions[%]
-     = {256, 320}
-    #> ImageResize[ein, {256, 256}, Resampling -> "Gaussian"]
-     : Gaussian resampling needs to maintain aspect ratio.
-     = ImageResize[-Image-, {256, 256}, Resampling -> Gaussian]
-    #> ImageResize[ein, 256, Resampling -> "Invalid"]
-     : Invalid resampling method Invalid.
-     = ImageResize[-Image-, 256, Resampling -> Invalid]
-
-    #> ImageDimensions[ImageResize[ein, {256}]]
+    S> ImageDimensions[%]
      = {256, 256}
 
-    #> ImageResize[ein, {x}]
-     : The size {x} is not a valid image size specification.
-     = ImageResize[-Image-, {x}]
-    #> ImageResize[ein, x]
-     : The size x is not a valid image size specification.
-     = ImageResize[-Image-, x]
-    """
+    The Resampling option can be used to specify how to resample the image. Options are:
+    <ul>
+      <li>Automatic
+      <li>Bicubic
+      <li>Gaussian
+      <li>Nearest
+    </ul>
 
-    summary_text = "resize an image"
-    options = {"Resampling": "Automatic"}
+    The default sampling method is Bicubic.
+
+    S> ImageResize[ein, 256, Resampling -> "Bicubic"]
+     = -Image-
+
+    S> ImageResize[ein, 256, Resampling -> "Gaussian"]
+     = ...
+     : ...
+    """
 
     messages = {
         "imgrssz": "The size `1` is not a valid image size specification.",
@@ -457,6 +461,9 @@ class ImageResize(_ImageBuiltin):
         "gaussaspect": "Gaussian resampling needs to maintain aspect ratio.",
         "skimage": "Please install scikit-image to use Resampling -> Gaussian.",
     }
+
+    options = {"Resampling": "Automatic"}
+    summary_text = "resize an image"
 
     def _get_image_size_spec(self, old_size, new_size) -> Optional[float]:
         predefined_sizes = {
@@ -873,9 +880,10 @@ class Blur(_ImageBuiltin):
 class Sharpen(_ImageBuiltin):
     """
     <dl>
-    <dt>'Sharpen[$image$]'
+      <dt>'Sharpen[$image$]'
       <dd>gives a sharpened version of $image$.
-    <dt>'Sharpen[$image$, $r$]'
+
+      <dt>'Sharpen[$image$, $r$]'
       <dd>sharpens $image$ with a kernel of size $r$.
     </dl>
 
@@ -898,7 +906,7 @@ class Sharpen(_ImageBuiltin):
 class GaussianFilter(_ImageBuiltin):
     """
     <dl>
-    <dt>'GaussianFilter[$image$, $r$]'
+      <dt>'GaussianFilter[$image$, $r$]'
       <dd>blurs $image$ using a Gaussian blur filter of radius $r$.
     </dl>
 
@@ -1309,7 +1317,7 @@ class ColorQuantize(_ImageBuiltin):
         py_value = n.value
         if py_value <= 0:
             return evaluation.message(
-                "ColorQuantize", "intp", Expression("ColorQuantize", image, n), 2
+                "ColorQuantize", "intp", Expression(SymbolColorQuantize, image, n), 2
             )
         converted = image.color_convert("RGB")
         if converted is None:
@@ -1323,7 +1331,7 @@ class ColorQuantize(_ImageBuiltin):
 class Threshold(_SkimageBuiltin):
     """
     <dl>
-    <dt>'Threshold[$image$]'
+      <dt>'Threshold[$image$]'
       <dd>gives a value suitable for binarizing $image$.
     </dl>
 
@@ -1332,11 +1340,11 @@ class Threshold(_SkimageBuiltin):
     >> img = Import["ExampleData/lena.tif"];
     >> Threshold[img]
      = 0.456739
-    >> Binarize[img, %]
+    X> Binarize[img, %]
      = -Image-
-    >> Threshold[img, Method -> "Mean"]
+    X> Threshold[img, Method -> "Mean"]
      = 0.486458
-    >> Threshold[img, Method -> "Median"]
+    X> Threshold[img, Method -> "Median"]
      = 0.504726
     """
 
@@ -1375,20 +1383,22 @@ class Threshold(_SkimageBuiltin):
 class Binarize(_SkimageBuiltin):
     """
     <dl>
-    <dt>'Binarize[$image$]'
+      <dt>'Binarize[$image$]'
       <dd>gives a binarized version of $image$, in which each pixel is either 0 or 1.
-    <dt>'Binarize[$image$, $t$]'
+
+      <dt>'Binarize[$image$, $t$]'
       <dd>map values $x$ > $t$ to 1, and values $x$ <= $t$ to 0.
-    <dt>'Binarize[$image$, {$t1$, $t2$}]'
+
+      <dt>'Binarize[$image$, {$t1$, $t2$}]'
       <dd>map $t1$ < $x$ < $t2$ to 1, and all other values to 0.
     </dl>
 
     >> img = Import["ExampleData/lena.tif"];
-    >> Binarize[img]
+    X> Binarize[img]
      = -Image-
-    >> Binarize[img, 0.7]
+    X> Binarize[img, 0.7]
      = -Image-
-    >> Binarize[img, {0.2, 0.6}]
+    X> Binarize[img, {0.2, 0.6}]
      = -Image-
     """
 
@@ -1397,7 +1407,9 @@ class Binarize(_SkimageBuiltin):
     def apply(self, image, evaluation):
         "Binarize[image_Image]"
         image = image.grayscale()
-        thresh = Expression("Threshold", image).evaluate(evaluation).round_to_float()
+        thresh = (
+            Expression(SymbolThreshold, image).evaluate(evaluation).round_to_float()
+        )
         if thresh is not None:
             return Image(image.pixels > thresh, "Grayscale")
 
@@ -1458,7 +1470,10 @@ class ColorCombine(_ImageBuiltin):
 
         numpy_channels = []
         for channel in channels.elements:
-            if not Expression("MatrixQ", channel).evaluate(evaluation) is SymbolTrue:
+            if (
+                not Expression(SymbolMatrixQ, channel).evaluate(evaluation)
+                is SymbolTrue
+            ):
                 return
             numpy_channels.append(matrix_to_numpy(channel))
 
@@ -1532,7 +1547,7 @@ class Colorize(_ImageBuiltin):
             pixels = values.grayscale().pixels
             matrix = pixels_as_ubyte(pixels.reshape(pixels.shape[:2]))
         else:
-            if not Expression("MatrixQ", values).evaluate(evaluation) is SymbolTrue:
+            if not Expression(SymbolMatrixQ, values).evaluate(evaluation) is SymbolTrue:
                 return
             matrix = matrix_to_numpy(values)
 
@@ -1833,7 +1848,7 @@ class ImageChannels(_ImageBuiltin):
 class ImageType(_ImageBuiltin):
     """
     <dl>
-    <dt>'ImageType[$image$]'
+      <dt>'ImageType[$image$]'
       <dd>gives the interval storage type of $image$, e.g. "Real", "Bit32", or "Bit".
     </dl>
 
@@ -1844,7 +1859,7 @@ class ImageType(_ImageBuiltin):
     >> ImageType[Image[{{0, 1}, {1, 0}}]]
      = Real
 
-    >> ImageType[Binarize[img]]
+    X> ImageType[Binarize[img]]
      = Bit
 
     """
@@ -1859,19 +1874,20 @@ class ImageType(_ImageBuiltin):
 class BinaryImageQ(_ImageTest):
     """
     <dl>
-    <dt>'BinaryImageQ[$image]'
+      <dt>'BinaryImageQ[$image]'
       <dd>returns True if the pixels of $image are binary bit values, and False otherwise.
     </dl>
 
-    >> img = Import["ExampleData/lena.tif"];
+    S> img = Import["ExampleData/lena.tif"];
     S> BinaryImageQ[img]
      = False
 
     S> BinaryImageQ[Binarize[img]]
-     = True
+     = ...
+     : ...
     """
 
-    summary_text = "test whether pixels in an image ar binary bit values"
+    summary_text = "test whether pixels in an image are binary bit values"
 
     def test(self, expr):
         return isinstance(expr, Image) and expr.storage_type() == "Bit"
@@ -1895,7 +1911,7 @@ def _image_pixels(matrix):
 class ImageQ(_ImageTest):
     """
     <dl>
-    <dt>'ImageQ[Image[$pixels]]'
+      <dt>'ImageQ[Image[$pixels]]'
       <dd>returns True if $pixels has dimensions from which an Image can be constructed, and False otherwise.
     </dl>
 
@@ -2102,14 +2118,13 @@ class Image(Atom):
             return "Bit16"
         elif dtype == numpy.uint8:
             return "Byte"
-        elif dtype == numpy.bool:
+        elif dtype == bool:
             return "Bit"
         else:
             return str(dtype)
 
     def options(self):
-        return Expression(
-            "List",
+        return ListExpression(
             Expression(SymbolRule, String("ColorSpace"), String(self.color_space)),
             Expression(SymbolRule, String("MetaInformation"), self.metadata),
         )
@@ -2140,7 +2155,7 @@ class ImageAtom(AtomBuiltin):
             is_rgb = len(shape) == 3 and shape[2] in (3, 4)
             return Image(pixels.clip(0, 1), "RGB" if is_rgb else "Grayscale")
         else:
-            return Expression("Image", array)
+            return Expression(SymbolImage, array)
 
 
 # complex operations

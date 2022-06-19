@@ -13,7 +13,7 @@ from mathics.core.parser.util import SystemDefinitions
 
 from mathics.core.parser import parse_builtin_rule
 from mathics.core.symbols import Symbol
-from mathics.core.systemsymbols import SymbolAnd, SymbolNot, SymbolOr
+from mathics.core.systemsymbols import SymbolAnd, SymbolEqual, SymbolNot, SymbolOr
 
 # TODO: Extend these rules?
 
@@ -176,7 +176,9 @@ def logical_expand_assumptions(assumptions_list, evaluation):
                     new_assumptions_list.append(Expression(SymbolNot, element))
                 continue
             if sentence.has_form("And", None):
-                elements = (Expression("Not", element) for element in sentence.elements)
+                elements = (
+                    Expression(SymbolNot, element) for element in sentence.elements
+                )
                 new_assumptions_list.append(Expression(SymbolOr, *elements))
                 continue
             if sentence.has_form("Implies", 2):
@@ -329,7 +331,7 @@ def get_assumption_rules_dispatch(evaluation):
                         SymbolFalse,
                     )
                 )
-                for head in ("Equal", "Equivalent"):
+                for head in (SymbolEqual, Symbol("Equivalent")):
                     assumption_rules.append(
                         Rule(
                             Expression(head, pat.elements[0], pat.elements[1]),

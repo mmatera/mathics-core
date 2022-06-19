@@ -7,7 +7,7 @@ from functools import total_ordering
 import importlib
 from itertools import chain
 import typing
-from typing import Any, Iterable, cast
+from typing import Any, Callable, Iterable, List, Optional, cast
 
 
 from mathics.builtin.exceptions import (
@@ -31,6 +31,7 @@ from mathics.core.atoms import (
     MachineReal,
     PrecisionReal,
     String,
+    from_python,
 )
 from mathics.core.expression import Expression, SymbolDefault, to_expression
 from mathics.core.number import get_precision, PrecisionValueError
@@ -40,6 +41,21 @@ from mathics.core.symbols import (
 )
 from mathics.core.systemsymbols import SymbolHoldForm, SymbolMessageName, SymbolRule
 from mathics.core.attributes import protected, read_protected
+
+
+def check_requires_list(requires: list) -> bool:
+    """
+    Check if module names in ``requires`` can be imported and return True if they can or False if not.
+    """
+    for package in requires:
+        lib_is_installed = True
+        try:
+            lib_is_installed = importlib.util.find_spec(package) is not None
+        except ImportError:
+            lib_is_installed = False
+        if not lib_is_installed:
+            return False
+    return True
 
 
 def get_option(options, name, evaluation, pop=False, evaluate=True):
@@ -112,7 +128,7 @@ class Builtin:
     ```
         def apply(x, evaluation):
              "F[x_Real]"
-             return Expression(Symbol("G"), x*2)
+             return Expression("G", x*2)
     ```
 
     adds a ``BuiltinRule`` to the symbol's definition object that implements ``F[x_]->G[x*2]``.
@@ -407,7 +423,6 @@ class Builtin:
         unavailable_function = self._get_unavailable_function()
         for name in dir(self):
             if name.startswith(prefix):
-
                 function = getattr(self, name)
                 pattern = function.__doc__
                 if pattern is None:  # Fixes PyPy bug
@@ -439,25 +454,28 @@ class Builtin:
     def get_option(options, name, evaluation, pop=False):
         return get_option(options, name, evaluation, pop)
 
-    def _get_unavailable_function(self):
+    def _get_unavailable_function(self) -> Optional[Callable]:
+        """
+        If some of the required libraries for a symbol are not available,
+        returns a default function that override the ``apply_`` methods
+        of the class. Otherwise, returns ``None``.
+        """
+
+        def apply_unavailable(**kwargs):  # will override apply method
+            package = from_python(self.requires)
+            kwargs["evaluation"].message(
+                "General",
+                "pyimport",  # see inout.py
+                strip_context(self.get_name()),
+                # WARNING: package isn't defined here, but mysteriously is
+                # defined in the place gets apply (or rather "eval"'d).
+                # Without it we there are a number of doctests we won't run
+                # even though they are should be.
+                package,  # noqa
+            )
+
         requires = getattr(self, "requires", [])
-
-        for package in requires:
-            try:
-                importlib.import_module(package)
-            except ImportError:
-
-                def apply(**kwargs):  # will override apply method
-                    kwargs["evaluation"].message(
-                        "General",
-                        "pyimport",  # see inout.py
-                        strip_context(self.get_name()),
-                        package,
-                    )
-
-                return apply
-
-        return None
+        return None if check_requires_list(requires) else apply_unavailable
 
     def get_option_string(self, *params):
         s = self.get_option(*params)
@@ -543,7 +561,7 @@ class Operator(Builtin):
 
 
 class Predefined(Builtin):
-    def get_functions(self, prefix="apply", is_pymodule=False):
+    def get_functions(self, prefix="apply", is_pymodule=False) -> List[Callable]:
         functions = list(super().get_functions(prefix))
         if prefix == "apply" and hasattr(self, "evaluate"):
             functions.append((Symbol(self.get_name()), self.evaluate))
@@ -721,7 +739,7 @@ class BoxExpression(BuiltinElement):
     # considered "inert". However, it could happend that an Expression having them as an element
     # be evaluable, and try to apply rules. For example,
     # InputForm[ToBoxes[a+b]]
-    # should be evaluated to ``Expression(SymbolRowBox, '"a"', '"+"', '"b"')``.
+    # should be evaluated to ``Expression("RowBox", '"a"', '"+"', '"b"')``.
     #
     # Changes to do, after the refactor of mathics.core:
     #
