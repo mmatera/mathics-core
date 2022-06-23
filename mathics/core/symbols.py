@@ -612,7 +612,7 @@ class PredefinedSymbol(Symbol):
         has the property HoldRest. That kind of thing though is detected
         at the higher level in handling the expression setup for `If`, not here.
         """
-        return False
+        return True
 
     def is_uncertain_final_definitions(self, definitions) -> bool:
         """
@@ -673,7 +673,7 @@ SymbolMathMLForm = Symbol("MathMLForm")
 SymbolMaxPrecision = Symbol("$MaxPrecision")
 SymbolMinPrecision = Symbol("$MinPrecision")
 SymbolN = Symbol("System`N")
-SymbolNull = Symbol("System`Null")
+SymbolNull = PredefinedSymbol("System`Null")
 SymbolNumberForm = Symbol("System`NumberForm")
 SymbolOutputForm = Symbol("OutputForm")
 SymbolPlus = Symbol("Plus")
