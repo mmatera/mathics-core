@@ -1210,6 +1210,8 @@ class Expression(BaseElement, NumericOperators, EvalMixin):
                 if result.sameQ(new):
                     new._timestamp_cache(evaluation)
                     return new, False
+                elif result.isliteral:
+                    return result, False
                 else:
                     return result, True
 
