@@ -292,7 +292,6 @@ def from_sympy_matrix(
     return to_mathics_list(*expr.tolist(), elements_conversion_fn=from_sympy)
 
 
-"""
 sympy_conversion_by_type = {
     complex: lambda expr: Complex(Real(expr.real), Real(expr.imag)),
     int: lambda x: Integer(x),
@@ -300,29 +299,29 @@ sympy_conversion_by_type = {
     tuple: lambda expr: to_mathics_list(*expr, elements_conversion_fn=from_sympy),
     list: lambda expr: to_mathics_list(*expr, elements_conversion_fn=from_sympy),
     str: lambda x: String(x),
-    sympy.Matrix :from_sympy_matrix,
-    sympy.ImmutableMatrix :from_sympy_matrix,
+    sympy.Matrix: from_sympy_matrix,
+    sympy.ImmutableMatrix: from_sympy_matrix,
     sympy.MatPow: lambda expr: Expression(
-            SymbolMatrixPower, from_sympy(expr.base), from_sympy(expr.exp)
-        ),
+        SymbolMatrixPower, from_sympy(expr.base), from_sympy(expr.exp)
+    ),
     SympyExpression: lambda expr: expr.expr,
     SympyPrime: lambda expr: Expression(SymbolPrime, from_sympy(expr.args[0])),
-    sympy.RootSum: lambda expr: Expression(SymbolRootSum, from_sympy(expr.poly), from_sympy(expr.fun)),
+    sympy.RootSum: lambda expr: Expression(
+        SymbolRootSum, from_sympy(expr.poly), from_sympy(expr.fun)
+    ),
     sympy.Tuple: lambda expr: to_mathics_list(*expr, elements_conversion_fn=from_sympy),
 }
 
-"""
 
-# def new_from_sympy(expr)->BaseElement:
-#    """
-#    converts a SymPy object to a Mathics element.
-#    """
-#    try:
-#        return sympy_singleton_to_mathics[expr]
-#    except (KeyError, TypeError):
-#        pass
-#
-#    return sympy_conversion_by_type.get(type(expr), old_from_sympy)(expr)
+def new_from_sympy(expr) -> BaseElement:
+    """
+    converts a SymPy object to a Mathics element.
+    """
+    try:
+        return sympy_singleton_to_mathics[expr]
+    except (KeyError, TypeError):
+        pass
+    return sympy_conversion_by_type.get(type(expr), old_from_sympy)(expr)
 
 
 def old_from_sympy(expr) -> BaseElement:
