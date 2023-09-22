@@ -4,7 +4,7 @@
 Converts expressions from SymPy to Mathics expressions.
 Conversion to SymPy is handled directly in BaseElement descendants.
 """
-from typing import Optional, Type, Union
+from typing import Dict, Iterable, List, Optional, Set, Type, Union
 
 import sympy
 from sympy import Symbol as Sympy_Symbol, false as SympyFalse, true as SympyTrue
@@ -36,6 +36,7 @@ from mathics.core.expression_predefined import (
 )
 from mathics.core.list import ListExpression
 from mathics.core.number import FP_MANTISA_BINARY_DIGITS
+from mathics.core.rules import Pattern
 from mathics.core.symbols import (
     Symbol,
     SymbolFalse,
@@ -58,12 +59,14 @@ from mathics.core.systemsymbols import (
     SymbolGreater,
     SymbolGreaterEqual,
     SymbolIndeterminate,
+    SymbolIntegers,
     SymbolLess,
     SymbolLessEqual,
     SymbolMatrixPower,
     SymbolO,
     SymbolPi,
     SymbolPiecewise,
+    SymbolReals,
     SymbolSlot,
     SymbolUnequal,
 )
@@ -126,6 +129,45 @@ def to_sympy_matrix(data, **kwargs) -> Optional[sympy.MutableDenseMatrix]:
         return sympy.Matrix(data)
     except (TypeError, AssertionError, ValueError):
         return None
+
+
+def apply_domain_to_symbols(
+    symbols: Iterable[sympy.Symbol], domain
+) -> Dict[sympy.Symbol, sympy.Symbol]:
+    """Create new sympy symbols with domain applied.
+    Return a dict maps old to new.
+    """
+    # FIXME: this substitute solution would break when Solve[Abs[x]==3, x],where x=-3 and x=3.
+    # However, substituting symbol prior to actual solving would cause sympy to have biased assumption,
+    # it would refuse to solve Abs() when symbol is in Complexes
+    result = {}
+    for symbol in symbols:
+        if domain == SymbolReals:
+            new_symbol = sympy.Symbol(repr(symbol), real=True)
+        elif domain == SymbolIntegers:
+            new_symbol = sympy.Symbol(repr(symbol), integer=True)
+        else:
+            new_symbol = symbol
+        result[symbol] = new_symbol
+    return result
+
+
+def cut_dimension(
+    evaluation,
+    expressions: Union[Expression, List[Expression]],
+    symbols: Iterable[sympy.Symbol],
+) -> Set[sympy.Symbol]:
+    """delete unused variables to avoid SymPy's PolynomialError
+    : Not a zero-dimensional system in e.g. Solve[x^2==1&&z^2==-1,{x,y,z}]"""
+    if not isinstance(expressions, list):
+        expressions = [expressions]
+    subset = set()
+    for symbol in symbols:
+        pattern = Pattern.create(symbol)
+        for equation in expressions:
+            if not equation.is_free(pattern, evaluation):
+                subset.add(symbol)
+    return subset
 
 
 class SympyExpression(BasicSympy):
