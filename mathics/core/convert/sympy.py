@@ -5,8 +5,7 @@ Converts expressions from SymPy to Mathics expressions.
 Conversion to SymPy is handled directly in BaseElement descendants.
 """
 
-from collections.abc import Iterable
-from typing import Optional, Type, Union
+from typing import Dict, Iterable, List, Optional, Set, Type, Union
 
 import sympy
 from sympy import Symbol as Sympy_Symbol, false as SympyFalse, true as SympyTrue
@@ -134,7 +133,9 @@ def to_sympy_matrix(data, **kwargs) -> Optional[sympy.MutableDenseMatrix]:
         return None
 
 
-def apply_domain_to_symbols(symbols: Iterable[sympy.Symbol], domain) -> dict[sympy.Symbol, sympy.Symbol]:
+def apply_domain_to_symbols(
+    symbols: Iterable[sympy.Symbol], domain
+) -> Dict[sympy.Symbol, sympy.Symbol]:
     """Create new sympy symbols with domain applied.
     Return a dict maps old to new.
     """
@@ -153,9 +154,13 @@ def apply_domain_to_symbols(symbols: Iterable[sympy.Symbol], domain) -> dict[sym
     return result
 
 
-def cut_dimension(evaluation, expressions: Union[Expression, list[Expression]], symbols: Iterable[sympy.Symbol]) -> set[sympy.Symbol]:
-    '''delete unused variables to avoid SymPy's PolynomialError
-    : Not a zero-dimensional system in e.g. Solve[x^2==1&&z^2==-1,{x,y,z}]'''
+def cut_dimension(
+    evaluation,
+    expressions: Union[Expression, List[Expression]],
+    symbols: Iterable[sympy.Symbol],
+) -> Set[sympy.Symbol]:
+    """delete unused variables to avoid SymPy's PolynomialError
+    : Not a zero-dimensional system in e.g. Solve[x^2==1&&z^2==-1,{x,y,z}]"""
     if not isinstance(expressions, list):
         expressions = [expressions]
     subset = set()
@@ -177,7 +182,7 @@ class SympyExpression(BasicSympy):
 
         if all(isinstance(expr, BasicSympy) for expr in exprs):
             # called with SymPy arguments
-            obj = BasicSympy.__new__(cls, *exprs)
+            obj = super().__new__(cls, *exprs)
         elif len(exprs) == 1 and isinstance(exprs[0], Expression):
             # called with Mathics argument
             expr = exprs[0]
@@ -185,7 +190,7 @@ class SympyExpression(BasicSympy):
             sympy_elements = [element.to_sympy() for element in expr.elements]
             if sympy_head is None or None in sympy_elements:
                 return None
-            obj = BasicSympy.__new__(cls, sympy_head, *sympy_elements)
+            obj = super().__new__(cls, sympy_head, *sympy_elements)
             obj.expr = expr
         else:
             raise TypeError
@@ -400,9 +405,9 @@ def old_from_sympy(expr) -> BaseElement:
             if is_Cn_expr(name):
                 return Expression(SymbolC, Integer(int(name[1:])))
             if name.startswith(sympy_symbol_prefix):
-                name = name[len(sympy_symbol_prefix):]
+                name = name[len(sympy_symbol_prefix) :]
             if name.startswith(sympy_slot_prefix):
-                index = name[len(sympy_slot_prefix):]
+                index = name[len(sympy_slot_prefix) :]
                 return Expression(SymbolSlot, Integer(int(index)))
         elif expr.is_NumberSymbol:
             name = str(expr)
@@ -554,7 +559,7 @@ def old_from_sympy(expr) -> BaseElement:
                     *[from_sympy(arg) for arg in expr.args]
                 )
             if name.startswith(sympy_symbol_prefix):
-                name = name[len(sympy_symbol_prefix):]
+                name = name[len(sympy_symbol_prefix) :]
         args = [from_sympy(arg) for arg in expr.args]
         builtin = sympy_to_mathics.get(name)
         if builtin is not None:
